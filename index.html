@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>조합 복지 앱</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    :root{--green:#004A2F;--text:#1a1a1a;--text2:#6b6b6b;--border:rgba(0,0,0,0.1);--bg:#f4f4f0;--card:#fff;--r:12px}
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;color:var(--text)}
+    #app{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg)}
+    .card{background:var(--card);border-radius:var(--r);border:.5px solid var(--border);overflow:hidden;margin-bottom:10px}
+    .btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:13px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s}
+    .btn:active{opacity:.8}
+    .btn-p{background:var(--green);color:#fff}
+    .btn-s{background:var(--card);color:var(--text);border:.5px solid var(--border)}
+    .btn-d{background:#FCEBEB;color:#791F1F;border:none}
+    .btn-sm{padding:6px 12px;font-size:12px;width:auto;border-radius:6px;cursor:pointer;font-weight:600;border:.5px solid var(--border);background:var(--card);color:var(--text)}
+    .ig{margin-bottom:12px}
+    .ig label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px}
+    .ig input,.ig select,.ig textarea{width:100%;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:14px;font-family:inherit}
+    .ig input:focus,.ig select:focus{outline:none;border-color:var(--green)}
+    .hdr{background:var(--green);color:#fff;padding:14px 16px 16px;flex-shrink:0}
+    .hdr h2{font-size:18px;font-weight:700}
+    .hdr p{font-size:12px;opacity:.65;margin-top:2px}
+    .tbar{display:flex;background:var(--green);position:sticky;bottom:0;z-index:100;flex-shrink:0}
+    .ti{flex:1;display:flex;flex-direction:column;align-items:center;padding:6px 1px 8px;color:rgba(255,255,255,.45);font-size:9px;cursor:pointer;border-bottom:2px solid transparent}
+    .ti i{font-size:16px;margin-bottom:2px}
+    .ti.on{color:#fff;border-bottom-color:#FFD600}
+    .pg{flex:1;overflow-y:auto;padding:12px;padding-bottom:80px}
+    .lr{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:.5px solid var(--border)}
+    .lr:last-child{border-bottom:none}
+    .lr .inf{flex:1;min-width:0}
+    .lr .inf .nm{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .lr .inf .sb{font-size:11px;color:var(--text2);margin-top:2px}
+    .lr .am{font-size:13px;font-weight:600;white-space:nowrap}
+    .am.pl{color:#27500A}.am.mn{color:#A32D2D}
+    .ic{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+    .icg{background:#EAF3DE;color:#3B6D11}.icb{background:#E6F1FB;color:#185FA5}
+    .ica{background:#FAEEDA;color:#854F0B}.icr{background:#FCEBEB;color:#A32D2D}
+    .bdg{display:inline-flex;align-items:center;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
+    .bg{background:#EAF3DE;color:#27500A}.bb{background:#E6F1FB;color:#0C447C}
+    .ba{background:#FAEEDA;color:#633806}.br{background:#FCEBEB;color:#791F1F}
+    .ch{display:flex;align-items:center;gap:8px;padding:12px 16px 10px;border-bottom:.5px solid var(--border)}
+    .ch i{font-size:16px;color:var(--green)}
+    .ch span{font-size:14px;font-weight:600;flex:1}
+    .sg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+    .sb2{background:var(--card);border-radius:8px;border:.5px solid var(--border);padding:12px;text-align:center}
+    .sb2 .vl{font-size:18px;font-weight:700}
+    .sb2 .lb{font-size:10px;color:var(--text2);margin-top:3px}
+    .mo{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+    .mo.hd{display:none}
+    .mb{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;padding:20px 16px 36px}
+    .mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .mh h3{font-size:16px;font-weight:700}
+    .mc{background:none;border:none;font-size:24px;cursor:pointer;color:var(--text2)}
+    .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;transition:all .3s;z-index:999;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .toast.err{background:#A32D2D}
+    .lw{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:var(--green)}
+    .lc{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:360px}
+    .sl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;padding:4px 2px 6px}
+    .pw{background:#e8e8e4;border-radius:3px;height:6px;overflow:hidden;margin:5px 0 3px}
+    .pf{height:100%;border-radius:3px;background:var(--green);transition:width .4s}
+    .em{text-align:center;padding:36px 16px;color:var(--text2)}
+    .em i{font-size:36px;opacity:.3;display:block;margin-bottom:8px}
+    .nt{border-radius:8px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:10px}
+    .nt i{font-size:14px;flex-shrink:0;margin-top:1px}
+    .nt p{font-size:12px;line-height:1.5}
+    .nta{background:#FAEEDA}.nta i,.nta p{color:#633806}
+    .ntg{background:#EAF3DE}.ntg i,.ntg p{color:#27500A}
+    .ntb{background:#E6F1FB}.ntb i,.ntb p{color:#0C447C}
+    /* 선택 버튼 그리드 */
+    .sel-grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+    .sel-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px}
+    .sel-btn{padding:12px 6px;border-radius:10px;border:.5px solid var(--border);background:var(--card);cursor:pointer;text-align:center;transition:all .15s;color:var(--text)}
+    .sel-btn i{font-size:22px;display:block;margin-bottom:4px}
+    .sel-btn .lb{font-size:13px;font-weight:600}
+    .sel-btn .sub{font-size:10px;color:var(--text2);margin-top:2px}
+    .sel-btn.on-happy{border-color:#185FA5;background:#E6F1FB;color:#185FA5}
+    .sel-btn.on-happy .sub{color:#185FA5}
+    .sel-btn.on-sad{border-color:#A32D2D;background:#FCEBEB;color:#A32D2D}
+    .sel-btn.on-sad .sub{color:#A32D2D}
+    .amt-btn{padding:10px 4px;border-radius:8px;border:.5px solid var(--border);background:var(--card);font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;color:var(--text)}
+    .amt-btn.on{border-color:var(--green);background:#EAF3DE;color:var(--green)}
+    /* 직종 선택 */
+    .job-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+    .job-btn{padding:12px 8px;border-radius:10px;border:.5px solid var(--border);background:var(--card);cursor:pointer;text-align:center;font-size:13px;font-weight:600;color:var(--text);transition:all .15s}
+    .job-btn.on{border-color:var(--green);background:#EAF3DE;color:var(--green)}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .spin{animation:spin 1s linear infinite}
+  </style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore,collection,doc,getDoc,getDocs,setDoc,addDoc,updateDoc,deleteDoc,query,where,orderBy,serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged,createUserWithEmailAndPassword }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const fa=initializeApp({
+  apiKey:"AIzaSyA3Jjay-mXwVOfKGjdb-3J7bb-bzHXkeog",
+  authDomain:"project-f66bab52-d33b-4b61-b74.firebaseapp.com",
+  projectId:"project-f66bab52-d33b-4b61-b74",
+  storageBucket:"project-f66bab52-d33b-4b61-b74.firebasestorage.app",
+  messagingSenderId:"1085047850730",
+  appId:"1:1085047850730:web:8dc93225f1775bb0917993"
+});
+const db=getFirestore(fa), auth=getAuth(fa);
+
+const fmt=n=>Math.round(n||0).toLocaleString('ko-KR');
+const fmtW=n=>fmt(n)+'원';
+const thisYm=()=>{const d=new Date();return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`};
+const ymLabel=ym=>`${ym.slice(0,4)}년 ${parseInt(ym.slice(4))}월`;
+const today=()=>new Date().toISOString().slice(0,10);
+const appEl=document.getElementById('app');
+// 복지 충전액 계산 - 조합비 1만원 미만은 0원
+const calcCharge=(dues,rate)=>{
+  if((dues||0)<10000) return 0;
+  return Math.round((dues||0)*(rate??90)/100);
+};
+
+function showToast(msg,type=''){
+  const t=document.createElement('div');
+  t.className='toast'+(type?' '+type:'');
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300)},2500);
+}
+
+// EmailJS
+async function notify(title,message,from,phone=''){
+  try{
+    if(typeof emailjs==='undefined')return;
+    emailjs.init('Dbs4U4v8BPX3o2kcw');
+    await emailjs.send('service_vc077mq','template_61uu1sl',{title,message,from_name:from,phone,time:new Date().toLocaleString('ko-KR')});
+  }catch(e){console.warn('알림실패',e);}
+}
+
+const CATS={
+  coffee:{label:'커피·음료',icon:'ti-coffee',color:'#185FA5'},
+  health:{label:'건강·약국',icon:'ti-first-aid-kit',color:'#3B6D11'},
+  culture:{label:'문화·여가',icon:'ti-movie',color:'#854F0B'},
+  edu:{label:'교육비',icon:'ti-school',color:'#0F6E56'},
+  fuel:{label:'유류지원',icon:'ti-gas-station',color:'#A32D2D'},
+  food:{label:'음식',icon:'ti-tools-kitchen-2',color:'#534AB7'},
+  mart:{label:'마트',icon:'ti-shopping-cart',color:'#BA7517'},
+  online:{label:'온라인',icon:'ti-device-laptop',color:'#185F7A'},
+};
+const CK=Object.keys(CATS);
+
+// DB 함수
+const getMember=async uid=>{const s=await getDoc(doc(db,'members',uid));return s.exists()?{id:s.id,...s.data()}:null};
+const getMembers=async()=>{const s=await getDocs(collection(db,'members'));return s.docs.map(d=>({id:d.id,...d.data()}))};
+const saveMember=(uid,data)=>setDoc(doc(db,'members',uid),{...data,updatedAt:serverTimestamp()},{merge:true});
+const getLimit=async(uid,ym)=>{const s=await getDoc(doc(db,'limits',`${uid}_${ym}`));return s.exists()?s.data():null};
+const saveLimit=(uid,ym,data)=>setDoc(doc(db,'limits',`${uid}_${ym}`),{uid,ym,...data,updatedAt:serverTimestamp()},{merge:true});
+const getAllLimits=async ym=>{try{const s=await getDocs(query(collection(db,'limits'),where('ym','==',ym)));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const addWReq=data=>addDoc(collection(db,'welfare_requests'),{...data,status:'pending',createdAt:serverTimestamp()});
+const getMyWReqs=async uid=>{try{const s=await getDocs(query(collection(db,'welfare_requests'),where('uid','==',uid),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const getAllWReqs=async ym=>{try{const s=await getDocs(query(collection(db,'welfare_requests'),where('ym','==',ym),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const updateWReq=(id,data)=>updateDoc(doc(db,'welfare_requests',id),{...data,updatedAt:serverTimestamp()});
+const addSanjo=data=>addDoc(collection(db,'sanjo'),{...data,status:'pending',createdAt:serverTimestamp()});
+const getMySanjo=async uid=>{try{const s=await getDocs(query(collection(db,'sanjo'),where('uid','==',uid),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const getAllSanjo=async()=>{try{const s=await getDocs(query(collection(db,'sanjo'),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const updateSanjo=(id,data)=>updateDoc(doc(db,'sanjo',id),{...data,updatedAt:serverTimestamp()});
+const getPending=async()=>{try{const s=await getDocs(query(collection(db,'members'),where('status','==','pending')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+// 기부금영수증
+const addDonation=data=>addDoc(collection(db,'donations'),{...data,status:'pending',createdAt:serverTimestamp()});
+const getMyDonations=async uid=>{try{const s=await getDocs(query(collection(db,'donations'),where('uid','==',uid),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const getAllDonations=async()=>{try{const s=await getDocs(query(collection(db,'donations'),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const updateDonation=(id,data)=>updateDoc(doc(db,'donations',id),{...data,updatedAt:serverTimestamp()});
+// 조합비 변경 신청
+const addDuesReq=data=>addDoc(collection(db,'dues_requests'),{...data,status:'pending',createdAt:serverTimestamp()});
+const getMyDuesReqs=async uid=>{try{const s=await getDocs(query(collection(db,'dues_requests'),where('uid','==',uid),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const getAllDuesReqs=async()=>{try{const s=await getDocs(query(collection(db,'dues_requests'),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const updateDuesReq=(id,data)=>updateDoc(doc(db,'dues_requests',id),{...data,updatedAt:serverTimestamp()});
+
+let CU=null,CM=null;
+const stL=s=>({pending:'대기중',approved:'승인',rejected:'반려',paid:'지급완료',active:'활성',inactive:'정지',withdraw:'탈퇴신청'}[s]||s);
+const stC=s=>({pending:'ba',approved:'bb',rejected:'br',paid:'bg',active:'bg',inactive:'br',withdraw:'br'}[s]||'bb');
+const roleL=r=>({admin:'최고관리자',sub_admin:'부관리자',finance:'재무총장',member:'조합원'}[r]||r);
+const roleC=r=>({admin:'bg',sub_admin:'bb',finance:'bp',member:'ba'}[r]||'ba');
+
+const MTABS=[
+  {id:'home',icon:'ti-home',label:'홈'},
+  {id:'welfare',icon:'ti-credit-card',label:'복지신청'},
+  {id:'sanjo',icon:'ti-heart',label:'상조회비'},
+  {id:'myinfo',icon:'ti-user',label:'내 정보'}
+];
+const ATABS=[
+  {id:'admin-dash',icon:'ti-layout-dashboard',label:'대시보드'},
+  {id:'admin-members',icon:'ti-users',label:'조합원'},
+  {id:'admin-charge',icon:'ti-bolt',label:'충전'},
+  {id:'admin-approve',icon:'ti-check',label:'승인'},
+  {id:'admin-catreq',icon:'ti-list-check',label:'카테고리'},
+  {id:'admin-myinfo',icon:'ti-user',label:'내 정보'}
+];
+
+function tbar(tabs,active){
+  return `<nav class="tbar">${tabs.map(t=>`<div class="ti ${t.id===active?'on':''}" data-page="${t.id}"><i class="ti ${t.icon}"></i>${t.label}</div>`).join('')}</nav>`;
+}
+
+async function go(pid){
+  const isA=['admin','sub_admin','finance'].includes(CM?.role);
+  const tabs=isA?ATABS:MTABS;
+  let html='';
+  try{
+    switch(pid){
+      case 'home':html=await pgHome();break;
+      case 'welfare':html=await pgWelfare();break;
+      case 'sanjo':html=await pgSanjo();break;
+      case 'myinfo':html=pgMyInfo();break;
+      case 'admin-dash':html=await pgADash();break;
+      case 'admin-members':html=await pgAMembers();break;
+      case 'admin-charge':html=await pgACharge();break;
+      case 'admin-approve':html=await pgAApprove();break;
+      case 'admin-catreq':html=await pgACatReq();break;
+      case 'admin-myinfo':html=pgAdminMyInfo();break;
+      default:html=`<div class="pg"><div class="em"><i class="ti ti-error-404"></i><p>없는 페이지</p></div></div>`;
+    }
+  }catch(e){console.error(e);html=`<div class="pg"><div class="em"><i class="ti ti-alert-circle"></i><p>오류: ${e.message}</p></div></div>`;}
+  appEl.innerHTML=`<div style="display:flex;flex-direction:column;height:100vh;overflow:hidden">${html}${tbar(tabs,pid)}</div>`;
+  document.querySelectorAll('.ti').forEach(t=>t.addEventListener('click',()=>go(t.dataset.page)));
+  bindPg(pid);
+}
+
+function bindPg(pid){
+  switch(pid){
+    case 'welfare':bWelfare();break;
+    case 'sanjo':bSanjo();break;
+    case 'myinfo':bMyInfo();break;
+    case 'admin-members':bAMembers();break;
+    case 'admin-charge':bACharge();break;
+    case 'admin-approve':bAApprove();break;
+    case 'admin-catreq':bACatReq();break;
+    case 'admin-myinfo':
+      document.getElementById('admin-logout-btn')?.addEventListener('click',()=>signOut(auth));
+      document.getElementById('ai-save')?.addEventListener('click',async()=>{
+        const name=document.getElementById('ai-name').value.trim();
+        const email=document.getElementById('ai-email').value.trim();
+        if(!name) return showToast('이름을 입력하세요','err');
+        await saveMember(CU.uid,{name,email});
+        CM={...CM,name,email};
+        showToast('저장됐습니다');
+        setTimeout(()=>go('admin-myinfo'),500);
+      });
+      break;
+  }
+}
+
+// ══ 홈 ══
+async function pgHome(){
+  const ym=thisYm();
+  const lim=await getLimit(CU.uid,ym);
+  const dues=CM?.dues||0,rate=CM?.chargeRate??90;
+  const charge=calcCharge(dues,rate);
+  // 전체 복지비 통합 (카테고리 구분 없이)
+  const totalCharge=lim?.totalCharge||lim?.chargeAmount||charge;
+  const usedAmts=lim?.usedAmounts||{};
+  const totalUsed=Object.values(usedAmts).reduce((s,v)=>s+v,0);
+  // 상조회비 사용액도 차감
+  const sanjoUsed=lim?.sanjoUsed||0;
+  const totalAllUsed=totalUsed+sanjoUsed;
+  const remain=Math.max(0,totalCharge-totalAllUsed);
+  const pct=totalCharge>0?Math.round(totalAllUsed/totalCharge*100):0;
+
+  // 사용 내역 카드
+  const usedRows=CK.filter(k=>(usedAmts[k]||0)>0).map(k=>{
+    const c=CATS[k];
+    return `<div class="lr" style="padding:8px 16px">
+      <div class="ic" style="width:28px;height:28px;background:#f0f0ec;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="ti ${c.icon}" style="color:${c.color};font-size:13px"></i>
+      </div>
+      <div class="inf"><div class="nm" style="font-size:12px">${c.label}</div></div>
+      <div class="am mn" style="font-size:12px">-${fmtW(usedAmts[k])}</div>
+    </div>`;
+  }).join('');
+  const sanjoRow=sanjoUsed>0?`<div class="lr" style="padding:8px 16px">
+    <div class="ic" style="width:28px;height:28px;background:#FCEBEB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <i class="ti ti-heart" style="color:#A32D2D;font-size:13px"></i>
+    </div>
+    <div class="inf"><div class="nm" style="font-size:12px">상조회비</div></div>
+    <div class="am mn" style="font-size:12px">-${fmtW(sanjoUsed)}</div>
+  </div>`:'';
+
+  const jobLabel=CM?.jobType==='전직'?`전직 (${CM?.dept||''})`:CM?.jobType==='현직'?`현직 (${CM?.dept||''})`:CM?.dept||'';
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div><div style="font-size:15px;font-weight:700;color:#fff">${CM?.name||''} 님</div>
+      <div style="font-size:11px;opacity:.6;color:#fff;margin-top:1px">${jobLabel} · ${ymLabel(ym)}</div></div>
+      <span class="bdg ${stC(CM?.status||'active')}">${stL(CM?.status||'active')}</span>
+    </div>
+  </div>
+  <div class="pg">
+    ${CM?.status==='pending'?'<div class="nt nta"><i class="ti ti-clock"></i><p>가입 승인 대기 중입니다. 관리자 승인 후 서비스를 이용할 수 있습니다.</p></div>':''}
+    <div style="background:var(--green);border-radius:14px;padding:18px;color:#fff;margin-bottom:10px">
+      <div style="font-size:11px;opacity:.6;margin-bottom:4px">이달 잔여 복지비</div>
+      <div style="font-size:32px;font-weight:700">${fmt(remain)}<span style="font-size:15px;opacity:.7;margin-left:3px">원</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px">
+        <span style="font-size:11px;opacity:.6">총 복지비 ${fmtW(totalCharge)}</span>
+        <span style="font-size:11px;opacity:.6">사용 ${fmtW(totalAllUsed)}</span>
+      </div>
+      <div style="margin-top:8px;background:rgba(255,255,255,.15);border-radius:3px;height:5px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:#FFD600;border-radius:3px"></div>
+      </div>
+      <div style="font-size:10px;opacity:.5;margin-top:4px">${lim?.charged?'충전완료':'미충전'}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <button class="btn btn-p" onclick="go('welfare')"><i class="ti ti-credit-card"></i> 복지 신청</button>
+      <button class="btn btn-s" onclick="go('sanjo')"><i class="ti ti-heart"></i> 상조회비</button>
+    </div>
+    ${(usedRows||sanjoRow)?`<div class="card">
+      <div class="ch"><i class="ti ti-receipt"></i><span>이달 사용 내역</span></div>
+      ${usedRows}${sanjoRow}
+      <div class="lr" style="padding:8px 16px;border-top:.5px solid var(--border)">
+        <div class="inf"><div class="nm" style="font-size:12px;font-weight:700">합계 사용액</div></div>
+        <div class="am mn" style="font-size:13px;font-weight:700">-${fmtW(totalAllUsed)}</div>
+      </div>
+    </div>`:''}
+    <div class="card">
+      <div class="ch"><i class="ti ti-coins"></i><span>이달 조합비</span></div>
+      <div class="lr"><div class="ic icb"><i class="ti ti-cash"></i></div>
+        <div class="inf"><div class="nm">월 납부 조합비</div><div class="sb">납부계좌: ${CM?.bankAccount||'미등록'}</div></div>
+        <div class="am">${fmtW(dues)}</div></div>
+      <div class="lr"><div class="ic icg"><i class="ti ti-credit-card"></i></div>
+        <div class="inf"><div class="nm">복지 충전액</div><div class="sb">수령계좌: ${CM?.welfareAccount||'미등록'}</div></div>
+        <div class="am pl">${fmtW(charge)}</div></div>
+    </div>
+  </div>`;
+}
+
+// ══ 복지비 신청 ══
+async function pgWelfare(){
+  const ym=thisYm();
+  const [lim,reqs]=await Promise.all([getLimit(CU.uid,ym),getMyWReqs(CU.uid)]);
+  const totalCharge=lim?.totalCharge||lim?.chargeAmount||0;
+  const ua=lim?.usedAmounts||{};
+  const totalUsed=Object.values(ua).reduce((s,v)=>s+v,0);
+  const sanjoUsed=lim?.sanjoUsed||0;
+  // 승인된 금액만 잔액에서 차감 (대기중은 표시만)
+  const totalRemain=Math.max(0,totalCharge-totalUsed-sanjoUsed);
+  // 대기중 신청 금액 합계
+  const pendingAmt=reqs.filter(r=>r.status==='pending').reduce((s,r)=>s+(r.amount||0),0);
+
+  const opts=CK.map(k=>`<option value="${k}">${CATS[k].label}</option>`).join('');
+
+  const rows=reqs.length?reqs.map(r=>{
+    const c=CATS[r.category]||{};
+    return `<div class="lr">
+      <div class="ic icb"><i class="ti ${c.icon||'ti-receipt'}"></i></div>
+      <div class="inf">
+        <div class="nm">${c.label||r.category} · ${fmtW(r.amount)}</div>
+        <div class="sb">${r.usedDate||''} · ${r.memo||''}</div>
+        <span class="bdg ${stC(r.status)}" style="margin-top:3px">${stL(r.status)}</span>
+      </div>
+      <div class="am mn" style="font-size:12px">-${fmtW(r.amount)}</div>
+    </div>`;
+  }).join(''):'<div class="em" style="padding:20px"><i class="ti ti-receipt-off"></i><p>신청 내역이 없습니다</p></div>';
+
+  return `<div class="hdr"><h2>복지비 신청</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+      <p>복지비 사용 신청</p>
+      <span style="font-size:13px;font-weight:700;color:#FFD600">잔액 ${fmtW(totalRemain)}</span>
+    </div>
+  </div>
+  <div class="pg">
+    ${pendingAmt>0?`<div class="nt nta"><i class="ti ti-clock"></i><p>승인 대기 중인 신청액 <strong>${fmtW(pendingAmt)}</strong> — 승인 후 잔액에서 차감됩니다.</p></div>`:''}
+    <div class="card" style="padding:14px 16px">
+      <div class="ig"><label>카테고리</label><select id="w-cat">${opts}</select></div>
+      <div class="ig">
+        <label>사용 금액 (원)</label>
+        <input type="number" id="w-amt" placeholder="예: 15000" step="1000" data-remain="${totalRemain}"/>
+        <div id="w-remain-display" style="margin-top:5px;padding:8px 10px;background:#f4f4f0;border-radius:6px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;color:var(--text2)">신청 후 잔액</span>
+          <span id="w-remain-val" style="font-size:13px;font-weight:700;color:#004A2F">${fmtW(totalRemain)}</span>
+        </div>
+      </div>
+      <div class="ig"><label>사용 날짜</label><input type="date" id="w-date"/></div>
+      <div class="ig"><label>사용처·메모</label><input type="text" id="w-memo" placeholder="예: 스타벅스 강남점"/></div>
+      <div class="ig"><label>영수증 번호 (선택)</label><input type="text" id="w-receipt" placeholder="카드 승인번호 또는 영수증 번호"/></div>
+      <button class="btn btn-p" id="w-sub"><i class="ti ti-send"></i> 복지비 신청하기</button>
+    </div>
+    <div class="sl">신청 내역</div>
+    <div class="card">${rows}</div>
+  </div>`;
+}
+
+function bWelfare(){
+  document.getElementById('w-date').value=today();
+
+  // 금액 입력 시 잔액 실시간 표시
+  document.getElementById('w-amt')?.addEventListener('input',function(){
+    const amt=parseInt(this.value)||0;
+    const totalRemain=parseInt(this.dataset.remain)||0;
+    const afterRemain=totalRemain-amt;
+    const el=document.getElementById('w-remain-val');
+    if(!el)return;
+    el.textContent=fmtW(Math.max(0,afterRemain));
+    el.style.color=afterRemain<0?'#A32D2D':'#004A2F';
+  });
+
+  document.getElementById('w-sub')?.addEventListener('click',async()=>{
+    const cat=document.getElementById('w-cat').value;
+    const amt=parseInt(document.getElementById('w-amt').value)||0;
+    const date=document.getElementById('w-date').value;
+    const memo=document.getElementById('w-memo').value.trim();
+    const receipt=document.getElementById('w-receipt').value.trim();
+    const totalRemain=parseInt(document.getElementById('w-amt').dataset.remain)||0;
+    if(!amt||amt<=0)return showToast('금액을 입력하세요','err');
+    if(!date)return showToast('날짜를 선택하세요','err');
+    if(amt>totalRemain)return showToast(`잔여 복지비 ${fmtW(totalRemain)} 초과입니다`,'err');
+    const btn=document.getElementById('w-sub');btn.disabled=true;
+    try{
+      const ym=thisYm();
+      await addWReq({uid:CU.uid,memberName:CM?.name||'',category:cat,amount:amt,usedDate:date,memo,receipt,ym});
+      notify('복지비 신청',`${CM?.name}님\n카테고리: ${CATS[cat]?.label}\n금액: ${fmtW(amt)}\n사용처: ${memo}`,CM?.name||'',CM?.phone||'');
+      showToast('복지비 신청이 완료되었습니다');
+      setTimeout(()=>go('welfare'),800);
+    }catch(e){showToast('오류: '+e.message,'err');}
+    finally{btn.disabled=false;}
+  });
+}
+
+// ══ 상조회비 신청 ══
+async function pgSanjo(){
+  const ym=thisYm();
+  const [reqs,lim]=await Promise.all([getMySanjo(CU.uid),getLimit(CU.uid,ym)]);
+  const totalCharge=lim?.totalCharge||lim?.chargeAmount||0;
+  const usedAmts=lim?.usedAmounts||{};
+  const totalUsed=Object.values(usedAmts).reduce((s,v)=>s+v,0);
+  const sanjoUsed=lim?.sanjoUsed||0;
+  const remain=Math.max(0,totalCharge-totalUsed-sanjoUsed);
+
+  const rows=reqs.length?reqs.map(r=>`
+    <div class="lr">
+      <div class="ic ${r.eventType==='happy'?'icb':'icr'}">
+        <i class="ti ${r.eventType==='happy'?'ti-confetti':'ti-candle'}"></i>
+      </div>
+      <div class="inf">
+        <div class="nm">${r.eventType==='happy'?'경사':'애사'} · ${fmtW(r.amount)}</div>
+        <div class="sb">${r.eventDate||''} ${r.note?'· '+r.note:''}</div>
+        <span class="bdg ${stC(r.status)}" style="margin-top:3px">${stL(r.status)}</span>
+      </div>
+      <div class="am ${r.status==='paid'?'pl':'mn'}">${fmtW(r.amount)}</div>
+    </div>`).join(''):`<div class="em" style="padding:20px"><i class="ti ti-heart-off"></i><p>신청 내역이 없습니다</p></div>`;
+
+  return `<div class="hdr"><h2>상조회비 신청</h2><p>잔여 복지비: ${fmtW(remain)}</p></div>
+  <div class="pg">
+    <div class="card" style="padding:14px 16px">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">① 구분 선택</div>
+      <div class="sel-grid2">
+        <div class="sel-btn" id="btn-happy" onclick="pickType('happy')">
+          <i class="ti ti-confetti" style="color:#185FA5"></i>
+          <div class="lb">경사</div>
+          <div class="sub">결혼·출산·입학 등</div>
+        </div>
+        <div class="sel-btn" id="btn-sad" onclick="pickType('sad')">
+          <i class="ti ti-candle" style="color:#A32D2D"></i>
+          <div class="lb">애사</div>
+          <div class="sub">상(喪) 관련</div>
+        </div>
+      </div>
+      <input type="hidden" id="s-type"/>
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">② 상조금 금액</div>
+      <div class="sel-grid3">
+        <div class="amt-btn" onclick="pickAmt(this,50000)">5만원</div>
+        <div class="amt-btn" onclick="pickAmt(this,100000)">10만원</div>
+        <div class="amt-btn" id="btn-etc" onclick="pickAmt(this,0)">기타</div>
+      </div>
+      <div class="ig" id="etc-wrap" style="display:none">
+        <label>직접 입력 (원)</label>
+        <input type="number" id="s-amt-etc" placeholder="금액 입력" step="10000"/>
+      </div>
+      <input type="hidden" id="s-amt" value="0"/>
+      <div class="ig"><label>③ 날짜</label><input type="date" id="s-date"/></div>
+      <div class="ig"><label>④ 내용 (선택)</label><input type="text" id="s-note" placeholder="예: 부친상, 장남 결혼 등"/></div>
+      <div class="ig"><label>⑤ 수령 계좌</label><input type="text" id="s-account" value="${CM?.welfareAccount||''}" placeholder="농협 351-0000-0000-03 홍길동"/></div>
+      <button class="btn btn-p" id="s-sub"><i class="ti ti-send"></i> 상조회비 신청하기</button>
+    </div>
+    <div class="sl">신청 내역</div>
+    <div class="card" style="overflow:visible">${rows}</div>
+  </div>`;
+}
+
+window.pickType=function(t){
+  document.getElementById('btn-happy').className='sel-btn'+(t==='happy'?' on-happy':'');
+  document.getElementById('btn-sad').className='sel-btn'+(t==='sad'?' on-sad':'');
+  document.getElementById('s-type').value=t;
+};
+window.pickAmt=function(el,amt){
+  document.querySelectorAll('.amt-btn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('etc-wrap').style.display=amt===0?'block':'none';
+  document.getElementById('s-amt').value=amt;
+};
+
+function bSanjo(){
+  document.getElementById('s-date').value=today();
+  document.getElementById('s-sub')?.addEventListener('click',async()=>{
+    const type=document.getElementById('s-type').value;
+    if(!type)return showToast('경사/애사를 선택하세요','err');
+    let amt=parseInt(document.getElementById('s-amt').value)||0;
+    if(amt===0)amt=parseInt(document.getElementById('s-amt-etc')?.value)||0;
+    if(!amt||amt<=0)return showToast('금액을 선택하거나 입력하세요','err');
+    const date=document.getElementById('s-date').value;
+    const note=document.getElementById('s-note').value.trim();
+    const account=document.getElementById('s-account').value.trim();
+    if(!date)return showToast('날짜를 선택하세요','err');
+    // 잔액 체크 (복지비+상조비 통합 한도)
+    const ym=thisYm();
+    const lim=await getLimit(CU.uid,ym);
+    const totalCharge=lim?.totalCharge||lim?.chargeAmount||0;
+    const ua=lim?.usedAmounts||{};
+    const totalUsed=Object.values(ua).reduce((s,v)=>s+v,0);
+    const sanjoUsed=lim?.sanjoUsed||0;
+    const totalRemain=Math.max(0,totalCharge-totalUsed-sanjoUsed);
+    if(amt>totalRemain){
+      return showToast(`잔여 복지비 ${fmtW(totalRemain)} 초과입니다`,'err');
+    }
+    const btn=document.getElementById('s-sub');btn.disabled=true;
+    try{
+      await addSanjo({uid:CU.uid,memberName:CM?.name||'',eventType:type,amount:amt,eventDate:date,note,account,ym});
+      notify('상조회비 신청',`${CM?.name}님\n구분: ${type==='happy'?'경사':'애사'}\n금액: ${fmtW(amt)}\n내용: ${note}\n잔여복지비: ${fmtW(totalRemain-amt)}`,CM?.name||'',CM?.phone||'');
+      showToast('상조회비 신청이 완료되었습니다');
+      setTimeout(()=>go('sanjo'),800);
+    }catch(e){showToast('오류: '+e.message,'err');}
+    finally{btn.disabled=false;}
+  });
+}
+
+// ══ 내 정보 ══
+function pgMyInfo(){
+  const charge=calcCharge(CM?.dues,CM?.chargeRate);
+  const jobLabel=CM?.jobType==='전직'?`전직 (사무총국)`:CM?.jobType==='현직'?`현직 (${CM?.dept||''})`:CM?.dept||'';
+  const thisYear=new Date().getFullYear();
+  const years=[thisYear,thisYear-1,thisYear-2].map(y=>`<option value="${y}">${y}년</option>`).join('');
+  return `<div class="hdr"><h2>내 정보</h2></div>
+  <div class="pg">
+    <div class="card" style="padding:16px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div class="ic icb" style="width:48px;height:48px;font-size:20px;font-weight:700;flex-shrink:0">${(CM?.name||'?')[0]}</div>
+        <div><div style="font-size:16px;font-weight:700">${CM?.name||''}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">${jobLabel} · <span class="bdg ${stC(CM?.status||'active')}">${stL(CM?.status||'active')}</span></div>
+        </div>
+      </div>
+      <div style="border-top:.5px solid var(--border);padding-top:10px;display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--text2)">연락처</span><span style="font-size:12px">${CM?.phone||''}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--text2)">이메일</span><span style="font-size:12px">${CM?.email||'미등록'}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--text2)">월 조합비</span><span style="font-size:12px;font-weight:700">${fmtW(CM?.dues)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:var(--text2)">복지 충전액</span><span style="font-size:12px;font-weight:700;color:#27500A">${fmtW(charge)}</span></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="ch"><i class="ti ti-building-bank"></i><span>계좌 정보</span>
+        <button class="btn-sm" id="acc-edit-btn" style="margin-left:auto">수정</button>
+      </div>
+      <div class="lr"><div class="ic icb"><i class="ti ti-cash"></i></div>
+        <div class="inf"><div class="nm">조합비 납부 계좌</div><div class="sb">${CM?.bankAccount||'미등록'}</div></div></div>
+      <div class="lr"><div class="ic icg"><i class="ti ti-credit-card"></i></div>
+        <div class="inf"><div class="nm">복지비 수령 계좌</div><div class="sb">${CM?.welfareAccount||'미등록'}</div></div></div>
+    </div>
+    <!-- 조합비 변경 신청 -->
+    <div class="card" style="margin-bottom:10px">
+      <div class="ch"><i class="ti ti-coins" style="color:#854F0B"></i><span>조합비 변경 신청</span></div>
+      <div style="padding:12px 16px">
+        <div class="nt nta" style="margin-bottom:10px"><i class="ti ti-info-circle"></i>
+          <p>현재 월 조합비: <strong>${fmtW(CM?.dues||0)}</strong><br/>변경 금액을 입력하면 관리자 승인 후 적용됩니다.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="ig" style="margin:0"><label>변경 조합비 (원)</label><input type="number" id="dr-dues" placeholder="예: 40000" step="1000"/></div>
+          <div class="ig" style="margin:0"><label>적용 월</label><input type="month" id="dr-month" value="${new Date().toISOString().slice(0,7)}"/></div>
+        </div>
+        <div class="ig"><label>변경 사유</label><input type="text" id="dr-reason" placeholder="예: 직급 변경, 호봉 인상 등"/></div>
+        <button class="btn btn-p" id="dr-sub" style="background:#854F0B"><i class="ti ti-send"></i> 변경 신청하기</button>
+      </div>
+      <div id="dr-list-wrap" style="border-top:.5px solid var(--border)"></div>
+    </div>
+    <!-- 기부금영수증 신청 -->
+    <div class="card" style="margin-bottom:10px">
+      <div class="ch"><i class="ti ti-file-invoice" style="color:#534AB7"></i><span>기부금영수증 신청</span></div>
+      <div style="padding:12px 16px">
+        <div class="nt ntb" style="margin-bottom:10px"><i class="ti ti-info-circle"></i>
+          <p>연도별 납부 조합비에 대한 기부금영수증을 신청합니다. 관리자 승인 후 발급됩니다.<br/>주민등록번호는 암호화되어 저장됩니다.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div class="ig" style="margin:0"><label>신청 연도</label><select id="don-year">${years}</select></div>
+          <div class="ig" style="margin:0"><label>신청 금액 (원)</label><input type="number" id="don-amt" placeholder="납부 총액" step="1000"/></div>
+        </div>
+        <div class="ig"><label>성명</label><input type="text" id="don-name" value="${CM?.name||''}" placeholder="홍길동"/></div>
+        <div class="ig">
+          <label>주민등록번호</label>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center">
+            <input type="text" id="don-rr1" placeholder="앞 6자리" maxlength="6" inputmode="numeric" style="text-align:center"/>
+            <span style="text-align:center;font-weight:700;color:var(--text2)">-</span>
+            <input type="password" id="don-rr2" placeholder="뒤 7자리" maxlength="7" inputmode="numeric" style="text-align:center"/>
+          </div>
+        </div>
+        <div class="ig"><label>주소</label><input type="text" id="don-addr" placeholder="예: 충남 홍성군 홍북읍 ..."/></div>
+        <div class="ig"><label>상세주소</label><input type="text" id="don-addr2" placeholder="예: 000동 000호"/></div>
+        <div class="ig"><label>용도 (선택)</label><input type="text" id="don-memo" placeholder="예: 소득공제용"/></div>
+        <button class="btn btn-p" id="don-sub" style="background:#534AB7"><i class="ti ti-file-invoice"></i> 영수증 신청하기</button>
+      </div>
+      <div id="don-list-wrap" style="border-top:.5px solid var(--border)"></div>
+    </div>
+    <button class="btn btn-s" id="logout-btn" style="margin-bottom:8px"><i class="ti ti-logout"></i> 로그아웃</button>
+    ${CM?.status==='withdraw'?
+      `<div class="nt nta" style="margin-top:8px"><i class="ti ti-clock"></i><p>탈퇴 신청이 접수되었습니다. 관리자 처리 후 완료됩니다.</p></div>`:
+      `<button class="btn btn-d" id="withdraw-btn"><i class="ti ti-user-minus"></i> 탈퇴 신청</button>`
+    }
+  </div>
+  <div class="mo hd" id="acc-modal">
+    <div class="mb">
+      <div class="mh"><h3>계좌 정보 수정</h3><button class="mc" id="acc-close">&times;</button></div>
+      <div class="ig"><label>조합비 납부 계좌</label><input type="text" id="acc-bank" value="${CM?.bankAccount||''}" placeholder="농협 351-0000-0000-03"/></div>
+      <div class="ig"><label>복지비 수령 계좌</label><input type="text" id="acc-welfare" value="${CM?.welfareAccount||''}" placeholder="농협 351-0000-0000-03"/></div>
+      <button class="btn btn-p" id="acc-save"><i class="ti ti-device-floppy"></i> 저장</button>
+    </div>
+  </div>`;
+}
+
+function bMyInfo(){
+  document.getElementById('logout-btn')?.addEventListener('click',()=>signOut(auth));
+  document.getElementById('withdraw-btn')?.addEventListener('click',async()=>{
+    if(!confirm('탈퇴를 신청하시겠습니까?\n관리자 확인 후 처리됩니다.'))return;
+    await saveMember(CU.uid,{status:'withdraw'});
+    notify('탈퇴 신청',`${CM?.name}님이 탈퇴를 신청했습니다.`,CM?.name||'',CM?.phone||'');
+    showToast('탈퇴 신청이 접수되었습니다');
+    CM={...CM,status:'withdraw'};
+    setTimeout(()=>go('myinfo'),800);
+  });
+  document.getElementById('acc-edit-btn')?.addEventListener('click',()=>document.getElementById('acc-modal').classList.remove('hd'));
+  document.getElementById('acc-close')?.addEventListener('click',()=>document.getElementById('acc-modal').classList.add('hd'));
+  document.getElementById('acc-save')?.addEventListener('click',async()=>{
+    const bank=document.getElementById('acc-bank').value.trim();
+    const welfare=document.getElementById('acc-welfare').value.trim();
+    await saveMember(CU.uid,{bankAccount:bank,welfareAccount:welfare});
+    CM={...CM,bankAccount:bank,welfareAccount:welfare};
+    showToast('계좌 정보가 저장됐습니다');
+    document.getElementById('acc-modal').classList.add('hd');
+    setTimeout(()=>go('myinfo'),500);
+  });
+  // 조합비 변경 신청 내역 로드
+  getMyDuesReqs(CU.uid).then(reqs=>{
+    const wrap=document.getElementById('dr-list-wrap');
+    if(!wrap)return;
+    if(!reqs.length){wrap.innerHTML='<div class="em" style="padding:12px"><i class="ti ti-clock"></i><p style="font-size:12px">변경 신청 내역이 없습니다</p></div>';return;}
+    wrap.innerHTML=reqs.map(r=>`<div class="lr">
+      <div class="ic ica"><i class="ti ti-coins"></i></div>
+      <div class="inf">
+        <div class="nm">${r.applyMonth||''} · ${fmtW(r.newDues)}으로 변경</div>
+        <div class="sb">${r.reason||''}</div>
+        <span class="bdg ${stC(r.status)}" style="margin-top:3px">${stL(r.status)}</span>
+      </div>
+    </div>`).join('');
+  });
+  // 조합비 변경 신청
+  document.getElementById('dr-sub')?.addEventListener('click',async()=>{
+    const newDues=parseInt(document.getElementById('dr-dues').value)||0;
+    const applyMonth=document.getElementById('dr-month').value;
+    const reason=document.getElementById('dr-reason').value.trim();
+    if(!newDues||newDues<=0)return showToast('변경할 조합비를 입력하세요','err');
+    if(!applyMonth)return showToast('적용 월을 선택하세요','err');
+    const btn=document.getElementById('dr-sub');btn.disabled=true;
+    try{
+      await addDuesReq({uid:CU.uid,memberName:CM?.name||'',phone:CM?.phone||'',currentDues:CM?.dues||0,newDues,applyMonth,reason});
+      notify('조합비 변경 신청',`${CM?.name}님\n현재: ${fmtW(CM?.dues||0)} → 변경: ${fmtW(newDues)}\n적용월: ${applyMonth}\n사유: ${reason}`,CM?.name||'',CM?.phone||'');
+      showToast('조합비 변경 신청이 완료되었습니다');
+      document.getElementById('dr-dues').value='';
+      document.getElementById('dr-reason').value='';
+      setTimeout(()=>go('myinfo'),800);
+    }catch(e){showToast('오류: '+e.message,'err');}
+    finally{btn.disabled=false;}
+  });
+  document.getElementById('don-rr1')?.addEventListener('input',function(){
+    if(this.value.length===6) document.getElementById('don-rr2')?.focus();
+  });
+  getMyDonations(CU.uid).then(reqs=>{
+    const wrap=document.getElementById('don-list-wrap');
+    if(!wrap)return;
+    if(!reqs.length){wrap.innerHTML='<div class="em" style="padding:16px"><i class="ti ti-file-off"></i><p>신청 내역이 없습니다</p></div>';return;}
+    wrap.innerHTML=reqs.map(r=>`<div class="lr">
+      <div class="ic icp"><i class="ti ti-file-invoice"></i></div>
+      <div class="inf">
+        <div class="nm">${r.year}년도 기부금영수증</div>
+        <div class="sb">${fmtW(r.amount)} · ${r.memo||''}</div>
+        <span class="bdg ${stC(r.status)}" style="margin-top:3px">${stL(r.status)}</span>
+        ${r.status==='approved'?`<span style="font-size:10px;color:#27500A;margin-left:4px">✓ 발급완료</span>`:''}
+      </div>
+    </div>`).join('');
+  });
+  // 기부금영수증 신청
+  document.getElementById('don-sub')?.addEventListener('click',async()=>{
+    const year=document.getElementById('don-year').value;
+    const amt=parseInt(document.getElementById('don-amt').value)||0;
+    const donName=document.getElementById('don-name').value.trim();
+    const rr1=document.getElementById('don-rr1').value.trim();
+    const rr2=document.getElementById('don-rr2').value.trim();
+    const addr=document.getElementById('don-addr').value.trim();
+    const addr2=document.getElementById('don-addr2').value.trim();
+    const memo=document.getElementById('don-memo').value.trim();
+    if(!amt||amt<=0)return showToast('신청 금액을 입력하세요','err');
+    if(!donName)return showToast('성명을 입력하세요','err');
+    if(!rr1||rr1.length!==6||!rr2||rr2.length!==7)return showToast('주민등록번호를 정확히 입력하세요','err');
+    if(!/^\d+$/.test(rr1+rr2))return showToast('주민등록번호는 숫자만 입력하세요','err');
+    if(!addr)return showToast('주소를 입력하세요','err');
+    // 주민등록번호 마스킹 처리 (뒷 6자리 마스킹)
+    const rrMasked=`${rr1}-${rr2[0]}******`;
+    const fullAddress=addr+(addr2?' '+addr2:'');
+    const btn=document.getElementById('don-sub');btn.disabled=true;
+    try{
+      await addDonation({
+        uid:CU.uid,memberName:donName,phone:CM?.phone||'',
+        year,amount:amt,memo,address:fullAddress,
+        residentNum:rrMasked,         // 마스킹된 번호만 저장
+        residentFull:`${rr1}${rr2}`,  // 전체 번호 (관리자용)
+      });
+      notify('기부금영수증 신청',`${donName}님\n연도: ${year}년\n금액: ${fmtW(amt)}\n주소: ${fullAddress}`,donName,CM?.phone||'');
+      showToast('기부금영수증 신청이 완료되었습니다');
+      document.getElementById('don-amt').value='';
+      document.getElementById('don-rr1').value='';
+      document.getElementById('don-rr2').value='';
+      document.getElementById('don-addr').value='';
+      document.getElementById('don-addr2').value='';
+      document.getElementById('don-memo').value='';
+      setTimeout(()=>go('myinfo'),800);
+    }catch(e){showToast('오류: '+e.message,'err');}
+    finally{btn.disabled=false;}
+  });
+}
+
+// ══ 관리자 대시보드 ══
+async function pgADash(){
+  const ym=thisYm();
+  const [members,limits,sanjos,wReqs]=await Promise.all([getMembers(),getAllLimits(ym),getAllSanjo(),getAllWReqs(ym)]);
+  const active=members.filter(m=>m.status==='active');
+  const pending=members.filter(m=>m.status==='pending');
+  const withdraw=members.filter(m=>m.status==='withdraw');
+  // 이달 납부 완료: active 회원 중 paid=true 인 limit만 카운트
+  const activeLimits=limits.filter(l=>active.find(m=>m.id===l.uid)&&l.paid);
+  const paid=activeLimits.length;
+  // 이달 충전액: active 회원 limit만 합산
+  const totalCharge=activeLimits.reduce((s,l)=>s+(l.chargeAmount||0),0);
+  const pS=sanjos.filter(s=>s.status==='pending');
+  const pW=wReqs.filter(r=>r.status==='pending');
+  const paidPct=active.length?Math.round(paid/active.length*100):0;
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div><h2>관리자 대시보드</h2><p>${ymLabel(ym)}</p></div>
+      <span class="bdg bg">${roleL(CM?.role)}</span>
+    </div>
+  </div>
+  <div class="pg">
+    <div class="sg">
+      <div class="sb2" onclick="go('admin-members')" style="cursor:pointer"><div class="vl">${active.length}명</div><div class="lb">활성 조합원 →</div></div>
+      <div class="sb2" onclick="go('admin-members')" style="cursor:pointer"><div class="vl" style="color:#A32D2D">${pending.length}명</div><div class="lb">가입 대기 →</div></div>
+      <div class="sb2" onclick="go('admin-approve')" style="cursor:pointer"><div class="vl" style="color:#854F0B">${pS.length+pW.length}건</div><div class="lb">승인 대기 →</div></div>
+      <div class="sb2" onclick="go('admin-members')" style="cursor:pointer"><div class="vl" style="color:#A32D2D">${withdraw.length}명</div><div class="lb">탈퇴 신청 →</div></div>
+    </div>
+    ${pending.length?`<div class="nt nta"><i class="ti ti-user-plus"></i><p>가입 대기 <strong>${pending.length}명</strong> — 조합원 탭에서 승인</p></div>`:''}
+    ${withdraw.length?`<div class="nt nta"><i class="ti ti-user-minus"></i><p>탈퇴 신청 <strong>${withdraw.length}명</strong> — 조합원 탭에서 처리</p></div>`:''}
+    ${(pS.length+pW.length)?`<div class="nt ntb"><i class="ti ti-clock"></i><p>복지비 <strong>${pW.length}건</strong> · 상조회비 <strong>${pS.length}건</strong> 승인 대기</p></div>`:''}
+    <div class="card">
+      <div class="ch"><i class="ti ti-chart-bar"></i><span>조합비 수납 현황 (${ymLabel(ym)})</span></div>
+      <div style="padding:12px 16px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:12px;color:var(--text2)">납부 완료</span>
+          <span style="font-size:13px;font-weight:600">${paid} / ${active.length}명</span>
+        </div>
+        <div class="pw"><div class="pf" style="width:${paidPct}%"></div></div>
+        ${totalCharge>0?`<div style="display:flex;justify-content:space-between;margin-top:6px">
+          <span style="font-size:12px;color:var(--text2)">이달 총 충전액</span>
+          <span style="font-size:12px;font-weight:700;color:var(--green)">${fmtW(totalCharge)}</span>
+        </div>`:''}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-p" onclick="go('admin-charge')"><i class="ti ti-bolt"></i> 충전 관리</button>
+      <button class="btn btn-s" onclick="go('admin-approve')"><i class="ti ti-check"></i> 승인 처리</button>
+    </div>
+  </div>`;
+}
+
+// ══ 관리자 회원 관리 ══
+let allM=[];
+async function pgAMembers(){
+  allM=await getMembers();
+  const pending=allM.filter(m=>m.status==='pending');
+  const active=allM.filter(m=>m.status==='active');
+  const withdraw=allM.filter(m=>m.status==='withdraw');
+  const mkRow=m=>`<div class="lr" style="cursor:pointer" onclick="document.querySelector('.edit-btn[data-uid=\\"${m.id}\\"]').click()">
+    <div class="ic icb" style="font-size:13px;font-weight:700;flex-shrink:0">${(m.name||'?')[0]}</div>
+    <div class="inf">
+      <div class="nm">${m.name||''} <span class="bdg ${stC(m.status||'active')}" style="margin-left:4px">${stL(m.status||'active')}</span> <span class="bdg ${roleC(m.role)}" style="margin-left:2px">${roleL(m.role)}</span></div>
+      <div class="sb">${m.jobType==='전직'?'전직(사무총국)':m.jobType==='현직'?`현직(${m.dept||''})`:m.dept||''} · 조합비 ${fmtW(m.dues||0)}</div>
+      <div class="sb">${m.phone||''}</div>
+    </div>
+    <button class="btn-sm edit-btn" data-uid="${m.id}" style="flex-shrink:0"><i class="ti ti-edit"></i></button>
+  </div>`;
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div><h2>조합원 관리</h2><p>활성 ${active.length}명 · 대기 ${pending.length}명${withdraw.length?` · 탈퇴신청 ${withdraw.length}명`:''}</p></div>
+      <button class="btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px" id="add-btn"><i class="ti ti-plus"></i> 조합원 추가</button>
+    </div>
+  </div>
+  <div class="pg">
+    ${pending.length?`<div class="sl">가입 대기 (${pending.length}명)</div><div class="card">${pending.map(mkRow).join('')}</div>`:''}
+    ${withdraw.length?`<div class="sl">탈퇴 신청 (${withdraw.length}명)</div><div class="card">${withdraw.map(mkRow).join('')}</div>`:''}
+    <div class="sl">활성 조합원 (${active.length}명)</div>
+    <div class="card">${active.length?active.map(mkRow).join(''):'<div class="em" style="padding:20px"><i class="ti ti-users-off"></i><p>활성 조합원 없음</p></div>'}</div>
+  </div>
+  <div class="mo hd" id="mem-modal">
+    <div class="mb">
+      <div class="mh"><h3 id="m-title">회원 추가</h3><button class="mc" id="m-close">&times;</button></div>
+      <input type="hidden" id="m-uid"/>
+      <div class="ig"><label>이름</label><input type="text" id="m-name"/></div>
+      <div class="ig"><label>전화번호 (로그인 아이디)</label><input type="tel" id="m-phone" placeholder="010-0000-0000" maxlength="13"/></div>
+      <div class="ig" id="m-pw-wrap"><label>초기 비밀번호 (6자 이상)</label><input type="password" id="m-pw"/></div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">직종</label>
+        <div class="job-grid">
+          <div class="job-btn" id="jb-prev" onclick="pickJob('전직')">전직 (사무총국)</div>
+          <div class="job-btn" id="jb-curr" onclick="pickJob('현직')">현직 (부서명 입력)</div>
+        </div>
+        <input type="hidden" id="m-jobtype"/>
+        <div class="ig" id="dept-wrap" style="display:none;margin-bottom:0">
+          <input type="text" id="m-dept" placeholder="부서명 입력 (예: 기획조정실)"/>
+        </div>
+      </div>
+      <div style="border-top:.5px solid var(--border);padding-top:12px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">복지 설정</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="ig" style="margin:0"><label>월 조합비 (원)</label><input type="number" id="m-dues" step="1000" placeholder="30000"/></div>
+          <div class="ig" style="margin:0"><label>충전율 (%)</label><input type="number" id="m-rate" value="90" min="0" max="100"/></div>
+        </div>
+      </div>
+      <div style="border-top:.5px solid var(--border);padding-top:12px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">계좌 정보</div>
+        <div class="ig"><label>조합비 납부 계좌</label><input type="text" id="m-bank" placeholder="농협 351-0000-0000-03"/></div>
+        <div class="ig"><label>복지비 수령 계좌</label><input type="text" id="m-wacc" placeholder="농협 351-0000-0000-03"/></div>
+      </div>
+      <div class="ig"><label>상태</label>
+        <select id="m-status"><option value="active">활성</option><option value="pending">대기중</option><option value="inactive">정지</option></select>
+      </div>
+      <div class="ig"><label>역할</label>
+        <select id="m-role">
+          <option value="member">일반 조합원</option>
+          <option value="sub_admin">부관리자</option>
+          <option value="finance">재무총장</option>
+          <option value="admin">최고관리자</option>
+        </select>
+      </div>
+      <button class="btn btn-p" id="m-save" style="margin-bottom:8px"><i class="ti ti-device-floppy"></i> 저장</button>
+      <button class="btn btn-d" id="m-del" style="display:none"><i class="ti ti-trash"></i> 삭제</button>
+    </div>
+  </div>`;
+}
+
+window.pickJob=function(t){
+  document.getElementById('jb-prev').className='job-btn'+(t==='전직'?' on':'');
+  document.getElementById('jb-curr').className='job-btn'+(t==='현직'?' on':'');
+  document.getElementById('m-jobtype').value=t;
+  document.getElementById('dept-wrap').style.display=t==='현직'?'block':'none';
+};
+
+function bAMembers(){
+  const open=uid=>{
+    const m=uid?allM.find(x=>x.id===uid):null;
+    document.getElementById('m-title').textContent=uid?'회원 수정':'회원 추가';
+    document.getElementById('m-uid').value=uid||'';
+    document.getElementById('m-name').value=m?.name||'';
+    document.getElementById('m-phone').value=m?.phone||'';
+    document.getElementById('m-dues').value=m?.dues||'';
+    document.getElementById('m-rate').value=m?.chargeRate??90;
+    document.getElementById('m-bank').value=m?.bankAccount||'';
+    document.getElementById('m-wacc').value=m?.welfareAccount||'';
+    document.getElementById('m-status').value=m?.status||'active';
+    document.getElementById('m-role').value=m?.role||'member';
+    document.getElementById('m-pw-wrap').style.display=uid?'none':'block';
+    document.getElementById('m-del').style.display=uid?'flex':'none';
+    if(m?.jobType) pickJob(m.jobType);
+    if(m?.dept) document.getElementById('m-dept').value=m.dept;
+    document.getElementById('mem-modal').classList.remove('hd');
+  };
+  document.getElementById('add-btn')?.addEventListener('click',()=>open());
+  document.getElementById('m-close')?.addEventListener('click',()=>document.getElementById('mem-modal').classList.add('hd'));
+  document.querySelectorAll('.edit-btn').forEach(b=>b.addEventListener('click',()=>open(b.dataset.uid)));
+  document.getElementById('m-save')?.addEventListener('click',async()=>{
+    const uid=document.getElementById('m-uid').value;
+    const name=document.getElementById('m-name').value.trim();
+    const pw=document.getElementById('m-pw').value;
+    const phone=document.getElementById('m-phone').value.trim().replace(/-/g,'');
+    const jobType=document.getElementById('m-jobtype').value;
+    const dept=jobType==='현직'?document.getElementById('m-dept').value.trim():'사무총국';
+    const dues=parseInt(document.getElementById('m-dues').value)||0;
+    const rate=parseInt(document.getElementById('m-rate').value)||90;
+    const bank=document.getElementById('m-bank').value.trim();
+    const wacc=document.getElementById('m-wacc').value.trim();
+    const status=document.getElementById('m-status').value;
+    const role=document.getElementById('m-role').value;
+    if(!name||!phone)return showToast('이름과 전화번호를 입력하세요','err');
+    const btn=document.getElementById('m-save');btn.disabled=true;
+    try{
+      let sid=uid;
+      if(!uid){
+        if(!pw||pw.length<6){showToast('비밀번호 6자 이상','err');btn.disabled=false;return;}
+        const fakeEmail=`${phone}@moim.app`;
+        const c=await createUserWithEmailAndPassword(auth,fakeEmail,pw);
+        sid=c.user.uid;
+      }
+      const ym=thisYm();
+      const ex=uid?allM.find(x=>x.id===uid):null;
+      const dH={...ex?.duesHistory||{},[ym]:{dues,charge:calcCharge(dues,rate)}};
+      await saveMember(sid,{name,phone,jobType,dept,dues,chargeRate:rate,bankAccount:bank,welfareAccount:wacc,status,role,duesHistory:dH,groupName:'충남도청'});
+      showToast(uid?'수정됐습니다':'추가됐습니다');
+      document.getElementById('mem-modal').classList.add('hd');
+      setTimeout(()=>go('admin-members'),800);
+    }catch(e){showToast('오류: '+e.message,'err');}
+    finally{btn.disabled=false;}
+  });
+  document.getElementById('m-del')?.addEventListener('click',async()=>{
+    if(!confirm('정말 삭제하시겠습니까?'))return;
+    await deleteDoc(doc(db,'members',document.getElementById('m-uid').value));
+    showToast('삭제됐습니다');
+    document.getElementById('mem-modal').classList.add('hd');
+    setTimeout(()=>go('admin-members'),800);
+  });
+}
+
+// ══ 관리자 충전 ══
+async function pgACharge(){
+  const ym=thisYm();
+  const [members,limits]=await Promise.all([getMembers(),getAllLimits(ym)]);
+  allM=members;
+  const active=members.filter(m=>m.status==='active');
+  const lmap=Object.fromEntries(limits.map(l=>[l.uid,l]));
+  const rows=active.map(m=>{
+    const lim=lmap[m.id]||{};
+    const mRate=m.chargeRate??90;
+    const mDues=m.duesHistory?.[ym]?.dues??m.dues??0;
+    const charge=calcCharge(mDues,mRate);
+    const lowDuesNotice=mDues>0&&mDues<10000?`<div style="font-size:10px;color:#A32D2D;margin-top:2px">⚠ 1만원 미만 — 복지비 미적용</div>`:'';
+    return `<div class="lr" style="flex-wrap:wrap;gap:6px">
+      <div class="ic icb" style="font-size:13px;font-weight:700;flex-shrink:0">${(m.name||'?')[0]}</div>
+      <div class="inf">
+        <div class="nm">${m.name||''}</div>
+        <div class="sb">조합비 ${fmtW(mDues)} · ${mRate}% = <strong style="color:${charge>0?'var(--green)':'#A32D2D'}">${fmtW(charge)}</strong></div>
+        <div class="sb">수령계좌: ${m.welfareAccount||'미등록'}</div>
+        ${lowDuesNotice}
+      </div>
+      <div style="display:flex;gap:4px;flex-direction:column;align-items:flex-end;flex-shrink:0">
+        <div style="display:flex;gap:4px">
+          <button class="btn-sm ${lim.paid?'btn-p':''} tog-paid" data-uid="${m.id}" data-paid="${!!lim.paid}" style="${lim.paid?'background:var(--green);color:#fff;border-color:var(--green)':''}">${lim.paid?'✓ 납부':'미납'}</button>
+          <button class="btn-sm ${lim.charged?'':'btn-p'} do-charge" data-uid="${m.id}" ${!lim.paid?'disabled style="opacity:.4"':'style="'+(lim.charged?'':'background:var(--green);color:#fff;border-color:var(--green)')+'"'}>${lim.charged?'충전됨':'충전'}</button>
+        </div>
+        <button class="btn-sm chg-dues" data-uid="${m.id}" style="font-size:10px"><i class="ti ti-edit" style="font-size:11px"></i> 이달 회비 변경</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="hdr"><div style="display:flex;align-items:center;justify-content:space-between"><div><h2>복지 충전 관리</h2><p>${ymLabel(ym)}</p></div></div></div>
+  <div class="pg">
+    <button class="btn btn-p" id="bulk-btn" style="margin-bottom:10px"><i class="ti ti-bolt"></i> 납부 완료 회원 일괄 충전</button>
+    <div class="card">${rows||'<div class="em" style="padding:20px"><i class="ti ti-users-off"></i><p>활성 회원 없음</p></div>'}</div>
+  </div>
+  <div class="mo hd" id="dues-modal">
+    <div class="mb">
+      <div class="mh"><h3>이달 회비 변경</h3><button class="mc" id="dc-close">&times;</button></div>
+      <input type="hidden" id="dc-uid"/>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px">이달만 임시 변경됩니다.</p>
+      <div class="ig"><label>이달 조합비 (원)</label><input type="number" id="dc-amt" step="1000"/></div>
+      <div class="ig"><label>충전율 (%)</label><input type="number" id="dc-rate" min="0" max="100"/></div>
+      <button class="btn btn-p" id="dc-save"><i class="ti ti-device-floppy"></i> 저장</button>
+    </div>
+  </div>`;
+}
+
+function bACharge(){
+  const ym=thisYm();
+  const doCharge=async uid=>{
+    const m=allM.find(x=>x.id===uid);if(!m)return;
+    const lim=await getLimit(uid,ym);
+    const mDues=m.duesHistory?.[ym]?.dues??m.dues??0;
+    const mRate=m.chargeRate??90;
+    const charge=calcCharge(mDues,mRate);
+    const catAmounts={};
+    CK.forEach(k=>{catAmounts[k]=m.catAmounts?.[k]||Math.round(charge/CK.length);});
+    await saveLimit(uid,ym,{dues:mDues,chargeRate:mRate,chargeAmount:charge,totalCharge:charge,catAmounts,usedAmounts:lim?.usedAmounts||{},sanjoUsed:lim?.sanjoUsed||0,paid:true,charged:true});
+  };
+  document.querySelectorAll('.tog-paid').forEach(btn=>btn.addEventListener('click',async()=>{
+    const paid=btn.dataset.paid==='true';
+    await saveLimit(btn.dataset.uid,ym,{paid:!paid});
+    showToast(!paid?'납부 완료':'미납으로 변경');
+    setTimeout(()=>go('admin-charge'),600);
+  }));
+  document.querySelectorAll('.do-charge').forEach(btn=>btn.addEventListener('click',async()=>{
+    if(btn.disabled)return;
+    btn.disabled=true;btn.textContent='충전중...';
+    try{await doCharge(btn.dataset.uid);showToast('충전 완료');setTimeout(()=>go('admin-charge'),600);}
+    catch(e){showToast('오류: '+e.message,'err');btn.disabled=false;}
+  }));
+  document.getElementById('bulk-btn')?.addEventListener('click',async()=>{
+    const btn=document.getElementById('bulk-btn');
+    btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2 spin"></i> 처리 중...';
+    try{
+      const [members,limits]=await Promise.all([getMembers(),getAllLimits(ym)]);
+      allM=members;
+      const lmap=Object.fromEntries(limits.map(l=>[l.uid,l]));
+      const to=members.filter(m=>m.status==='active'&&lmap[m.id]?.paid&&!lmap[m.id]?.charged);
+      await Promise.all(to.map(m=>doCharge(m.id)));
+      showToast(`${to.length}명 충전 완료`);
+      setTimeout(()=>go('admin-charge'),800);
+    }catch(e){showToast('오류: '+e.message,'err');btn.disabled=false;}
+  });
+  document.querySelectorAll('.chg-dues').forEach(btn=>btn.addEventListener('click',()=>{
+    const uid=btn.dataset.uid;
+    const m=allM.find(x=>x.id===uid);
+    document.getElementById('dc-uid').value=uid;
+    document.getElementById('dc-amt').value=m?.duesHistory?.[ym]?.dues??m?.dues??0;
+    document.getElementById('dc-rate').value=m?.chargeRate??90;
+    document.getElementById('dues-modal').classList.remove('hd');
+  }));
+  document.getElementById('dc-close')?.addEventListener('click',()=>document.getElementById('dues-modal').classList.add('hd'));
+  document.getElementById('dc-save')?.addEventListener('click',async()=>{
+    const uid=document.getElementById('dc-uid').value;
+    const dues=parseInt(document.getElementById('dc-amt').value)||0;
+    const rate=parseInt(document.getElementById('dc-rate').value)||90;
+    const m=allM.find(x=>x.id===uid);
+    const dH={...m?.duesHistory||{},[ym]:{dues,charge:calcCharge(dues,rate)}};
+    await saveMember(uid,{duesHistory:dH});
+    showToast('이달 회비가 변경됐습니다');
+    document.getElementById('dues-modal').classList.add('hd');
+    setTimeout(()=>go('admin-charge'),800);
+  });
+}
+
+// ══ 관리자 승인 ══
+async function pgAApprove(){
+  const ym=thisYm();
+  const [pM,wReqs,sanjos,donations,duesReqs]=await Promise.all([getPending(),getAllWReqs(ym),getAllSanjo(),getAllDonations(),getAllDuesReqs()]);
+  const pW=wReqs.filter(r=>r.status==='pending');
+  const pS=sanjos.filter(s=>s.status==='pending');
+  const pD=donations.filter(d=>d.status==='pending');
+  const pDR=duesReqs.filter(d=>d.status==='pending');
+
+  const mRows=pM.map(m=>`
+    <div class="lr" style="flex-wrap:wrap;gap:6px">
+      <div class="ic icb" style="font-size:13px;font-weight:700">${(m.name||'?')[0]}</div>
+      <div class="inf">
+        <div class="nm">${m.name||''}</div>
+        <div class="sb">${m.email||''} · ${m.phone||''}</div>
+        <div class="sb">${m.jobType==='전직'?'전직(사무총국)':m.jobType==='현직'?`현직(${m.dept||''})`:m.dept||''}</div>
+        ${m.bankAccount?`<div class="sb">납부계좌: ${m.bankAccount}</div>`:''}
+        ${m.welfareAccount?`<div class="sb">수령계좌: ${m.welfareAccount}</div>`:''}
+      </div>
+      <div style="display:flex;gap:4px">
+        <button class="btn-sm" style="background:var(--green);color:#fff;border-color:var(--green) approve-member" data-uid="${m.id}">승인</button>
+        <button class="btn-sm btn-d approve-member-ok" data-uid="${m.id}" style="display:none"></button>
+        <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:var(--green);color:#fff;border:none" class="approve-member" data-uid="${m.id}">승인</button>
+        <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:#FCEBEB;color:#791F1F;border:none" class="reject-member" data-uid="${m.id}">반려</button>
+      </div>
+    </div>`).join('');
+
+  const wRows=pW.map(r=>{
+    const c=CATS[r.category]||{};
+    return `<div class="lr" style="flex-wrap:wrap;gap:6px">
+      <div class="ic icb"><i class="ti ${c.icon||'ti-receipt'}"></i></div>
+      <div class="inf">
+        <div class="nm">${r.memberName||r.uid} · ${c.label||r.category}</div>
+        <div class="sb">${r.usedDate||''} · ${r.memo||''} · ${fmtW(r.amount)}</div>
+        ${r.receipt?`<div class="sb">영수증: ${r.receipt}</div>`:''}
+      </div>
+      <div style="display:flex;gap:4px">
+        <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:var(--green);color:#fff;border:none" class="approve-w" data-id="${r.id}" data-uid="${r.uid}" data-cat="${r.category}" data-amount="${r.amount}">승인</button>
+        <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:#FCEBEB;color:#791F1F;border:none" class="reject-w" data-id="${r.id}">반려</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const sRows=pS.map(s=>`
+    <div class="lr" style="flex-wrap:wrap;gap:6px">
+      <div class="ic ${s.eventType==='happy'?'icb':'icr'}">
+        <i class="ti ${s.eventType==='happy'?'ti-confetti':'ti-candle'}"></i>
+      </div>
+      <div class="inf">
+        <div class="nm">${s.memberName||s.uid} · ${s.eventType==='happy'?'경사':'애사'}</div>
+        <div class="sb">${s.eventDate||''} · ${s.note||''} · ${fmtW(s.amount)}</div>
+        ${s.account?`<div class="sb">수령계좌: ${s.account}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div style="font-size:13px;font-weight:700;color:#27500A">+${fmtW(s.amount)}</div>
+        <div style="display:flex;gap:4px">
+          <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:var(--green);color:#fff;border:none" class="approve-s" data-id="${s.id}">승인</button>
+          <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:#FCEBEB;color:#791F1F;border:none" class="reject-s" data-id="${s.id}">반려</button>
+        </div>
+      </div>
+    </div>`).join('');
+
+  const dRows=pD.map(d=>`
+    <div class="lr" style="flex-wrap:wrap;gap:6px">
+      <div class="ic icp"><i class="ti ti-file-invoice"></i></div>
+      <div class="inf">
+        <div class="nm">${d.memberName||d.uid} · ${d.year}년도</div>
+        <div class="sb">신청금액: ${fmtW(d.amount)} · ${d.phone||''}</div>
+        <div class="sb">주민번호: ${d.residentNum||'미기재'}</div>
+        <div class="sb">주소: ${d.address||'미기재'}</div>
+        ${d.memo?`<div class="sb">용도: ${d.memo}</div>`:''}
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:#534AB7;color:#fff;border:none" class="approve-d" data-id="${d.id}">발급 승인</button>
+        <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:#FCEBEB;color:#791F1F;border:none" class="reject-d" data-id="${d.id}">반려</button>
+      </div>
+    </div>`).join('');
+
+  const drRows=pDR.map(d=>`
+    <div class="lr" style="flex-wrap:wrap;gap:6px">
+      <div class="ic ica"><i class="ti ti-coins"></i></div>
+      <div class="inf">
+        <div class="nm">${d.memberName||d.uid}</div>
+        <div class="sb">${fmtW(d.currentDues)} → <strong>${fmtW(d.newDues)}</strong> · 적용월: ${d.applyMonth||''}</div>
+        ${d.reason?`<div class="sb">사유: ${d.reason}</div>`:''}
+        <div class="sb">연락처: ${d.phone||''}</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:var(--green);color:#fff;border:none" class="approve-dr" data-id="${d.id}" data-uid="${d.uid}" data-dues="${d.newDues}">승인</button>
+        <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:#FCEBEB;color:#791F1F;border:none" class="reject-dr" data-id="${d.id}">반려</button>
+      </div>
+    </div>`).join('');
+
+  return `<div class="hdr"><h2>승인 처리</h2><p>가입·복지비·상조·기부금·조합비변경</p></div>
+  <div class="pg">
+    <div class="sl">가입 대기 (${pM.length}명)</div>
+    <div class="card">${mRows||'<div class="em" style="padding:16px"><i class="ti ti-check"></i><p>대기 없음</p></div>'}</div>
+    <div class="sl">복지비 신청 (${pW.length}건)</div>
+    <div class="card">${wRows||'<div class="em" style="padding:16px"><i class="ti ti-check"></i><p>대기 없음</p></div>'}</div>
+    <div class="sl">상조회비 신청 (${pS.length}건)</div>
+    <div class="card">${sRows||'<div class="em" style="padding:16px"><i class="ti ti-check"></i><p>대기 없음</p></div>'}</div>
+    <div class="sl">조합비 변경 신청 (${pDR.length}건)</div>
+    <div class="card">${drRows||'<div class="em" style="padding:16px"><i class="ti ti-check"></i><p>대기 없음</p></div>'}</div>
+    <div class="sl">기부금영수증 신청 (${pD.length}건)</div>
+    <div class="card">${dRows||'<div class="em" style="padding:16px"><i class="ti ti-check"></i><p>대기 없음</p></div>'}</div>
+  </div>
+  <div class="mo hd" id="app-modal">
+    <div class="mb">
+      <div class="mh"><h3>가입 승인 · 복지 설정</h3><button class="mc" id="ap-close">&times;</button></div>
+      <input type="hidden" id="ap-uid"/>
+      <div class="nt ntb"><i class="ti ti-info-circle"></i><p>조합비와 카테고리별 복지 금액을 설정 후 승인하세요.<br/><strong>조합비 1만원 미만</strong>은 복지비가 적용되지 않습니다.</p></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div class="ig" style="margin:0"><label>월 조합비 (원)</label><input type="number" id="ap-dues" step="1000" placeholder="30000"/></div>
+        <div class="ig" style="margin:0"><label>충전율 (%)</label><input type="number" id="ap-rate" value="90"/></div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">카테고리별 복지 금액 (원)</div>
+      ${CK.map(k=>`<div class="ig" style="margin-bottom:8px">
+        <label><i class="ti ${CATS[k].icon}" style="color:${CATS[k].color};font-size:12px"></i> ${CATS[k].label}</label>
+        <input type="number" class="ap-cat" data-cat="${k}" step="1000" placeholder="0"/>
+      </div>`).join('')}
+      <button class="btn btn-p" id="ap-approve"><i class="ti ti-check"></i> 승인 완료</button>
+    </div>
+  </div>`;
+}
+
+function bAApprove(){
+  document.querySelectorAll('.approve-member').forEach(btn=>btn.addEventListener('click',()=>{
+    document.getElementById('ap-uid').value=btn.dataset.uid;
+    document.getElementById('ap-dues').value='';
+    document.getElementById('ap-rate').value='90';
+    document.querySelectorAll('.ap-cat').forEach(i=>i.value='');
+    document.getElementById('app-modal').classList.remove('hd');
+  }));
+  document.getElementById('ap-close')?.addEventListener('click',()=>document.getElementById('app-modal').classList.add('hd'));
+  document.getElementById('ap-approve')?.addEventListener('click',async()=>{
+    const uid=document.getElementById('ap-uid').value;
+    const dues=parseInt(document.getElementById('ap-dues').value)||0;
+    const rate=parseInt(document.getElementById('ap-rate').value)||90;
+    const catAmounts={};
+    document.querySelectorAll('.ap-cat').forEach(i=>{catAmounts[i.dataset.cat]=parseInt(i.value)||0;});
+    const ym=thisYm();
+    const btn=document.getElementById('ap-approve');btn.disabled=true;
+    try{
+      await saveMember(uid,{status:'active',dues,chargeRate:rate,catAmounts,duesHistory:{[ym]:{dues,charge:calcCharge(dues,rate)}}});
+      showToast('승인됐습니다');
+      document.getElementById('app-modal').classList.add('hd');
+      setTimeout(()=>go('admin-approve'),800);
+    }catch(e){showToast('오류: '+e.message,'err');btn.disabled=false;}
+  });
+  document.querySelectorAll('.reject-member').forEach(btn=>btn.addEventListener('click',async()=>{
+    if(!confirm('반려하시겠습니까?'))return;
+    await saveMember(btn.dataset.uid,{status:'rejected'});
+    showToast('반려됐습니다');
+    setTimeout(()=>go('admin-approve'),800);
+  }));
+  document.querySelectorAll('.approve-w').forEach(btn=>btn.addEventListener('click',async()=>{
+    const {id,uid,cat,amount}=btn.dataset;
+    try{
+      await updateWReq(id,{status:'approved'});
+      const ym=thisYm();
+      const lim=await getLimit(uid,ym);
+      const used={...lim?.usedAmounts||{}};
+      used[cat]=(used[cat]||0)+parseInt(amount);
+      await saveLimit(uid,ym,{usedAmounts:used});
+      showToast('승인됐습니다');
+      setTimeout(()=>go('admin-approve'),800);
+    }catch(e){showToast('오류: '+e.message,'err');}
+  }));
+  document.querySelectorAll('.reject-w').forEach(btn=>btn.addEventListener('click',async()=>{
+    await updateWReq(btn.dataset.id,{status:'rejected'});
+    showToast('반려됐습니다');
+    setTimeout(()=>go('admin-approve'),800);
+  }));
+  document.querySelectorAll('.approve-s').forEach(btn=>btn.addEventListener('click',async()=>{
+    try{
+      // 해당 신청 정보 가져오기
+      const sanjoDoc=await getDoc(doc(db,'sanjo',btn.dataset.id));
+      if(sanjoDoc.exists()){
+        const s=sanjoDoc.data();
+        const ym=s.ym||thisYm();
+        // 잔액에서 상조회비 차감
+        const lim=await getLimit(s.uid,ym);
+        const prevSanjoUsed=lim?.sanjoUsed||0;
+        await saveLimit(s.uid,ym,{sanjoUsed:prevSanjoUsed+s.amount});
+      }
+      await updateSanjo(btn.dataset.id,{status:'approved'});
+      showToast('승인됐습니다');
+      setTimeout(()=>go('admin-approve'),800);
+    }catch(e){showToast('오류: '+e.message,'err');}
+  }));
+  document.querySelectorAll('.reject-s').forEach(btn=>btn.addEventListener('click',async()=>{
+    await updateSanjo(btn.dataset.id,{status:'rejected'});
+    showToast('반려됐습니다');
+    setTimeout(()=>go('admin-approve'),800);
+  }));
+  // 기부금영수증 승인/반려
+  document.querySelectorAll('.approve-d').forEach(btn=>btn.addEventListener('click',async()=>{
+    await updateDonation(btn.dataset.id,{status:'approved'});
+    showToast('기부금영수증 발급 승인됐습니다');
+    setTimeout(()=>go('admin-approve'),800);
+  }));
+  document.querySelectorAll('.reject-d').forEach(btn=>btn.addEventListener('click',async()=>{
+    await updateDonation(btn.dataset.id,{status:'rejected'});
+    showToast('반려됐습니다');
+    setTimeout(()=>go('admin-approve'),800);
+  }));
+  // 조합비 변경 승인 → 회원 dues 필드 자동 업데이트
+  document.querySelectorAll('.approve-dr').forEach(btn=>btn.addEventListener('click',async()=>{
+    const {id,uid,dues}=btn.dataset;
+    try{
+      const newDues=parseInt(dues);
+      const ym=thisYm();
+      // 회원 dues 업데이트 + duesHistory 업데이트
+      const m=await getMember(uid);
+      const rate=m?.chargeRate??90;
+      const dH={...m?.duesHistory||{},[ym]:{dues:newDues,charge:calcCharge(newDues,rate)}};
+      await saveMember(uid,{dues:newDues,duesHistory:dH});
+      await updateDuesReq(id,{status:'approved'});
+      showToast('조합비 변경이 승인됐습니다');
+      setTimeout(()=>go('admin-approve'),800);
+    }catch(e){showToast('오류: '+e.message,'err');}
+  }));
+  document.querySelectorAll('.reject-dr').forEach(btn=>btn.addEventListener('click',async()=>{
+    await updateDuesReq(btn.dataset.id,{status:'rejected'});
+    showToast('반려됐습니다');
+    setTimeout(()=>go('admin-approve'),800);
+  }));
+}
+
+// ══ 관리자 카테고리별 신청·승인 ══
+async function pgACatReq(){
+  const ym=thisYm();
+  const [wReqs,members]=await Promise.all([getAllWReqs(ym),getMembers()]);
+  const mmap=Object.fromEntries(members.map(m=>[m.id,m]));
+
+  // 카테고리별로 그룹핑
+  const grouped={};
+  CK.forEach(k=>{grouped[k]={cat:CATS[k],pending:[],approved:[],rejected:[]};});
+  wReqs.forEach(r=>{
+    if(grouped[r.category]){
+      const st=r.status==='pending'?'pending':r.status==='approved'?'approved':'rejected';
+      grouped[r.category][st].push(r);
+    }
+  });
+
+  const catSections=CK.map(k=>{
+    const g=grouped[k];
+    const allReqs=[...g.pending,...g.approved,...g.rejected];
+    if(!allReqs.length) return '';
+
+    const rows=allReqs.map(r=>{
+      const m=mmap[r.uid]||{};
+      const stCls2=r.status==='pending'?'ba':r.status==='approved'?'bg':'br';
+      const stTxt=r.status==='pending'?'대기중':r.status==='approved'?'승인':'반려';
+      return `<div class="lr" style="flex-wrap:wrap;gap:6px">
+        <div class="inf">
+          <div class="nm">${m.name||r.memberName||r.uid} · ${fmtW(r.amount)}</div>
+          <div class="sb">${r.usedDate||''} · ${r.memo||''}</div>
+          ${r.receipt?`<div class="sb">영수증: ${r.receipt}</div>`:''}
+          <span class="bdg ${stCls2}" style="margin-top:3px">${stTxt}</span>
+        </div>
+        ${r.status==='pending'?`<div style="display:flex;gap:4px;flex-shrink:0">
+          <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:var(--green);color:#fff;border:none" class="catq-approve" data-id="${r.id}" data-uid="${r.uid}" data-cat="${r.category}" data-amount="${r.amount}">승인</button>
+          <button style="padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;background:#FCEBEB;color:#791F1F;border:none" class="catq-reject" data-id="${r.id}">반려</button>
+        </div>`:''}
+      </div>`;
+    }).join('');
+
+    const pendingCnt=g.pending.length;
+    return `<div class="sl" style="display:flex;align-items:center;gap:6px">
+      <i class="ti ${g.cat.icon}" style="color:${g.cat.color};font-size:14px"></i>
+      ${g.cat.label}
+      ${pendingCnt?`<span class="bdg ba">${pendingCnt}건 대기</span>`:'<span class="bdg bg">모두 처리됨</span>'}
+    </div>
+    <div class="card">${rows}</div>`;
+  }).join('');
+
+  const totalPending=wReqs.filter(r=>r.status==='pending').length;
+
+  return `<div class="hdr"><h2>카테고리별 신청 현황</h2><p>${ymLabel(ym)} · 대기 ${totalPending}건</p></div>
+  <div class="pg">
+    ${!catSections.trim()?'<div class="em"><i class="ti ti-receipt-off"></i><p>이달 신청 내역이 없습니다</p></div>':catSections}
+  </div>`;
+}
+
+function bACatReq(){
+  document.querySelectorAll('.catq-approve').forEach(btn=>btn.addEventListener('click',async()=>{
+    const {id,uid,cat,amount}=btn.dataset;
+    try{
+      await updateWReq(id,{status:'approved'});
+      const ym=thisYm();
+      const lim=await getLimit(uid,ym);
+      const used={...lim?.usedAmounts||{}};
+      used[cat]=(used[cat]||0)+parseInt(amount);
+      await saveLimit(uid,ym,{usedAmounts:used});
+      showToast('승인됐습니다');
+      setTimeout(()=>go('admin-catreq'),600);
+    }catch(e){showToast('오류: '+e.message,'err');}
+  }));
+  document.querySelectorAll('.catq-reject').forEach(btn=>btn.addEventListener('click',async()=>{
+    await updateWReq(btn.dataset.id,{status:'rejected'});
+    showToast('반려됐습니다');
+    setTimeout(()=>go('admin-catreq'),600);
+  }));
+}
+
+// ══ 관리자 내 정보 ══
+function pgAdminMyInfo(){
+  return `<div class="hdr"><h2>내 정보</h2><p>${roleL(CM?.role)}</p></div>
+  <div class="pg">
+    <div class="card" style="padding:16px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div class="ic icb" style="width:48px;height:48px;font-size:20px;font-weight:700;flex-shrink:0">${(CM?.name||'?')[0]}</div>
+        <div>
+          <div style="font-size:16px;font-weight:700">${CM?.name||''}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">
+            <span class="bdg ${roleC(CM?.role)}">${roleL(CM?.role)}</span>
+          </div>
+        </div>
+      </div>
+      <div style="border-top:.5px solid var(--border);padding-top:10px;display:flex;flex-direction:column;gap:7px">
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:12px;color:var(--text2)">전화번호</span>
+          <span style="font-size:12px">${CM?.phone||''}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:12px;color:var(--text2)">이메일</span>
+          <span style="font-size:12px">${CM?.email||'미등록'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:12px;color:var(--text2)">부서</span>
+          <span style="font-size:12px">${CM?.jobType==='전직'?'전직(사무총국)':CM?.dept||''}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:10px">
+      <div class="ch"><i class="ti ti-edit"></i><span>정보 수정</span></div>
+      <div style="padding:12px 16px">
+        <div class="ig"><label>이름</label><input type="text" id="ai-name" value="${CM?.name||''}"/></div>
+        <div class="ig"><label>이메일</label><input type="email" id="ai-email" value="${CM?.email||''}" placeholder="이메일 주소 입력"/></div>
+        <button class="btn btn-p" id="ai-save"><i class="ti ti-device-floppy"></i> 저장</button>
+      </div>
+    </div>
+    <button class="btn btn-s" id="admin-logout-btn">
+      <i class="ti ti-logout"></i> 로그아웃
+    </button>
+  </div>`;
+}
+
+// ══ 회원 가입 ══
+function renderSignup(){
+  appEl.innerHTML=`
+  <div class="lw">
+    <i class="ti ti-building-community" style="font-size:48px;color:#fff;margin-bottom:8px"></i>
+    <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">조합 복지 앱</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.65);margin-bottom:24px">충남도청 조합원 가입 신청</div>
+    <div class="lc">
+      <div style="font-size:15px;font-weight:700;margin-bottom:16px;text-align:center">조합원 가입 신청</div>
+      <div class="ig"><label>이름</label><input type="text" id="s-name" placeholder="홍길동"/></div>
+      <div class="ig">
+        <label>전화번호 (로그인 아이디로 사용)</label>
+        <input type="tel" id="s-phone" placeholder="010-0000-0000" maxlength="13"/>
+      </div>
+      <div class="ig"><label>비밀번호 (6자 이상)</label><input type="password" id="s-pw" placeholder="비밀번호 설정"/></div>
+      <div class="ig"><label>비밀번호 확인</label><input type="password" id="s-pw2" placeholder="비밀번호 재입력"/></div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">직종 선택</label>
+        <div class="job-grid">
+          <div class="job-btn" id="s-jb-prev" onclick="sPickJob('전직')">전직 (사무총국)</div>
+          <div class="job-btn" id="s-jb-curr" onclick="sPickJob('현직')">현직 (부서명 입력)</div>
+        </div>
+        <input type="hidden" id="s-jobtype"/>
+        <div class="ig" id="s-dept-wrap" style="display:none;margin-bottom:0">
+          <input type="text" id="s-dept" placeholder="부서명 입력 (예: 기획조정실)"/>
+        </div>
+      </div>
+      <div class="ig"><label>조합비 납부 계좌 (선택)</label><input type="text" id="s-bank" placeholder="농협 351-0000-0000-03 홍길동"/></div>
+      <div class="ig"><label>복지비 수령 계좌 (선택)</label><input type="text" id="s-welfare" placeholder="농협 351-0000-0000-03 홍길동"/></div>
+      <div style="border-top:.5px solid #e0e0e0;margin:12px 0;padding-top:12px">
+        <div style="font-size:12px;font-weight:600;color:#6b6b6b;margin-bottom:8px">월 조합비 (관리자 승인 후 확정)</div>
+        <div class="ig" style="margin-bottom:6px">
+          <label>월 납부 조합비 (원)</label>
+          <input type="number" id="s-dues" placeholder="예: 30000" step="1000"/>
+        </div>
+        <div style="background:#EAF3DE;border-radius:8px;padding:8px 10px;font-size:11px;color:#27500A">
+          <i class="ti ti-info-circle"></i> 복지 충전액 = 조합비의 90%로 자동 계산됩니다
+        </div>
+      </div>
+      <button class="btn btn-p" id="signup-btn" style="margin-bottom:10px"><i class="ti ti-user-plus"></i> 가입 신청하기</button>
+      <button class="btn btn-s" id="to-login-btn">이미 계정이 있으신가요? 로그인</button>
+    </div>
+  </div>`;
+  window.sPickJob=function(t){
+    document.getElementById('s-jb-prev').className='job-btn'+(t==='전직'?' on':'');
+    document.getElementById('s-jb-curr').className='job-btn'+(t==='현직'?' on':'');
+    document.getElementById('s-jobtype').value=t;
+    document.getElementById('s-dept-wrap').style.display=t==='현직'?'block':'none';
+  };
+  document.getElementById('signup-btn')?.addEventListener('click',async()=>{
+    const name=document.getElementById('s-name').value.trim();
+    const phone=document.getElementById('s-phone').value.trim().replace(/-/g,'');
+    const pw=document.getElementById('s-pw').value;
+    const pw2=document.getElementById('s-pw2').value;
+    const jobType=document.getElementById('s-jobtype').value;
+    const dept=jobType==='현직'?document.getElementById('s-dept').value.trim():'사무총국';
+    const bank=document.getElementById('s-bank').value.trim();
+    const welfare=document.getElementById('s-welfare').value.trim();
+    const dues=parseInt(document.getElementById('s-dues').value)||0;
+    if(!name||!phone)return showToast('이름과 전화번호를 입력하세요','err');
+    if(phone.length<10)return showToast('전화번호를 정확히 입력하세요','err');
+    if(!pw||pw.length<6)return showToast('비밀번호를 6자 이상 입력하세요','err');
+    if(pw!==pw2)return showToast('비밀번호가 일치하지 않습니다','err');
+    if(!jobType)return showToast('직종을 선택하세요','err');
+    // 전화번호를 이메일 형식으로 변환 (Firebase용)
+    const fakeEmail=`${phone}@moim.app`;
+    const btn=document.getElementById('signup-btn');btn.disabled=true;
+    try{
+      const c=await createUserWithEmailAndPassword(auth,fakeEmail,pw);
+      await saveMember(c.user.uid,{name,phone,jobType,dept,bankAccount:bank,welfareAccount:welfare,dues,chargeRate:90,status:'pending',role:'member',groupName:'충남도청'});
+      notify('새 조합원 가입 신청',`${name}님이 가입 신청했습니다.\n전화번호: ${phone}\n직종: ${jobType==='전직'?'전직(사무총국)':'현직('+dept+')'}`,name,phone);
+      showToast('가입 신청 완료! 관리자 승인을 기다려주세요.');
+      await signOut(auth);
+      renderLogin();
+    }catch(e){
+      if(e.code==='auth/email-already-in-use'){
+        showToast('이미 가입된 전화번호입니다','err');
+      } else {
+        showToast('오류: '+e.message,'err');
+      }
+      btn.disabled=false;
+    }
+  });
+  document.getElementById('to-login-btn')?.addEventListener('click',renderLogin);
+}
+
+// ══ 로그인 ══
+function renderLogin(){
+  appEl.innerHTML=`
+  <div class="lw">
+    <i class="ti ti-building-community" style="font-size:48px;color:#fff;margin-bottom:8px"></i>
+    <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">조합 복지 앱</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.65);margin-bottom:24px">충남도청 조합 후생복지</div>
+    <div class="lc">
+      <div class="ig">
+        <label>전화번호 (또는 관리자 이메일)</label>
+        <input type="text" id="l-phone" placeholder="010-0000-0000" autocomplete="tel"/>
+      </div>
+      <div class="ig">
+        <label>비밀번호</label>
+        <input type="password" id="l-pw" placeholder="비밀번호 입력" autocomplete="current-password"/>
+      </div>
+      <button class="btn btn-p" id="login-btn" style="margin-bottom:10px"><i class="ti ti-login"></i> 로그인</button>
+      <button class="btn btn-s" id="to-signup-btn"><i class="ti ti-user-plus"></i> 조합원 가입 신청</button>
+      <p style="text-align:center;font-size:12px;color:#6b6b6b;margin-top:10px">계정 문의: 관리자에게 연락하세요</p>
+    </div>
+  </div>`;
+  const doLogin=async()=>{
+    const input=document.getElementById('l-phone').value.trim();
+    const pw=document.getElementById('l-pw').value;
+    if(!input||!pw)return showToast('전화번호와 비밀번호를 입력하세요','err');
+    const btn=document.getElementById('login-btn');
+    btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2 spin"></i> 로그인 중...';
+    // 이메일 형식이면 그대로, 전화번호면 변환
+    const isEmail=input.includes('@');
+    const loginId=isEmail?input:`${input.replace(/-/g,'')}@moim.app`;
+    try{await signInWithEmailAndPassword(auth,loginId,pw);}
+    catch(e){showToast('전화번호 또는 비밀번호가 올바르지 않습니다','err');btn.disabled=false;btn.innerHTML='<i class="ti ti-login"></i> 로그인';}
+  };
+  document.getElementById('login-btn')?.addEventListener('click',doLogin);
+  document.getElementById('l-pw')?.addEventListener('keydown',e=>e.key==='Enter'&&doLogin());
+  document.getElementById('to-signup-btn')?.addEventListener('click',renderSignup);
+}
+
+// ══ 초기화 ══
+appEl.innerHTML=`<div class="lw"><i class="ti ti-loader-2 spin" style="font-size:40px;color:#fff"></i></div>`;
+onAuthStateChanged(auth,async user=>{
+  if(!user){renderLogin();return;}
+  CU=user;CM=await getMember(user.uid);
+  if(!CM){showToast('회원 정보를 찾을 수 없습니다','err');await signOut(auth);return;}
+  go(CM.role==='admin'?'admin-dash':'home');
+});
+window.go=go;
+</script>
+</body>
+</html>
