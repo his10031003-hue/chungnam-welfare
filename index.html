@@ -250,6 +250,46 @@ function bindPg(pid){
         showToast('저장됐습니다');
         setTimeout(()=>go('admin-myinfo'),500);
       });
+      // 전체 잔액 재계산
+      document.getElementById('recalc-btn')?.addEventListener('click',async()=>{
+        const btn=document.getElementById('recalc-btn');
+        const result=document.getElementById('recalc-result');
+        btn.disabled=true;
+        btn.innerHTML='<i class="ti ti-loader-2 spin"></i> 재계산 중...';
+        result.textContent='';
+        try{
+          const ym=thisYm();
+          const [members,wReqs,sanjos]=await Promise.all([getMembers(),getAllWReqs(ym),getAllSanjo()]);
+          let count=0;
+          for(const m of members){
+            if(m.status!=='active') continue;
+            // 승인된 복지비 합계 (카테고리별)
+            const approvedW=wReqs.filter(r=>r.uid===m.id&&r.status==='approved');
+            const usedAmounts={};
+            CK.forEach(k=>{usedAmounts[k]=0;});
+            approvedW.forEach(r=>{
+              if(usedAmounts[r.category]!==undefined) usedAmounts[r.category]+=r.amount||0;
+              else usedAmounts[r.category]=r.amount||0;
+            });
+            // 승인된 상조회비 합계
+            const approvedS=sanjos.filter(s=>s.uid===m.id&&s.status==='approved'&&s.ym===ym);
+            const sanjoUsed=approvedS.reduce((s,x)=>s+(x.amount||0),0);
+            // limit 업데이트
+            await saveLimit(m.id,ym,{usedAmounts,sanjoUsed});
+            count++;
+          }
+          result.textContent=`✓ ${count}명 재계산 완료`;
+          result.style.color='#27500A';
+          showToast(`${count}명 잔액 재계산 완료`);
+        }catch(e){
+          result.textContent='오류: '+e.message;
+          result.style.color='#A32D2D';
+          showToast('오류: '+e.message,'err');
+        }finally{
+          btn.disabled=false;
+          btn.innerHTML='<i class="ti ti-refresh"></i> 전체 잔액 재계산';
+        }
+      });
       break;
   }
 }
@@ -942,9 +982,9 @@ async function pgACharge(){
   const rows=active.map(m=>{
     const lim=lmap[m.id]||{};
     const mRate=m.chargeRate??90;
-    const mDues=m.duesHistory?.[ym]?.dues??m.dues??0;
+    const mDues=m.dues??0; // 항상 dues 필드 기준
     const charge=calcCharge(mDues,mRate);
-    const lowDuesNotice=mDues>0&&mDues<10000?`<div style="font-size:10px;color:#A32D2D;margin-top:2px">⚠ 1만원 미만 — 복지비 미적용</div>`:'';
+    const lowDuesNotice=mDues>0&&mDues<10000?`<div style="font-size:10px;color:#A32D2D;margin-top:2px">⚠ 1만원 미만 — 복지비 미적용</div>`:``;
     return `<div class="lr" style="flex-wrap:wrap;gap:6px">
       <div class="ic icb" style="font-size:13px;font-weight:700;flex-shrink:0">${(m.name||'?')[0]}</div>
       <div class="inf">
@@ -984,9 +1024,12 @@ function bACharge(){
   const doCharge=async uid=>{
     const m=allM.find(x=>x.id===uid);if(!m)return;
     const lim=await getLimit(uid,ym);
-    const mDues=m.duesHistory?.[ym]?.dues??m.dues??0;
+    const mDues=m.dues??0; // 항상 dues 필드 기준
     const mRate=m.chargeRate??90;
     const charge=calcCharge(mDues,mRate);
+    // duesHistory도 동기화
+    const dH={...m.duesHistory||{},[ym]:{dues:mDues,charge}};
+    await saveMember(uid,{duesHistory:dH});
     const catAmounts={};
     CK.forEach(k=>{catAmounts[k]=m.catAmounts?.[k]||Math.round(charge/CK.length);});
     await saveLimit(uid,ym,{dues:mDues,chargeRate:mRate,chargeAmount:charge,totalCharge:charge,catAmounts,usedAmounts:lim?.usedAmounts||{},sanjoUsed:lim?.sanjoUsed||0,paid:true,charged:true});
@@ -1379,6 +1422,17 @@ function pgAdminMyInfo(){
         <div class="ig"><label>이름</label><input type="text" id="ai-name" value="${CM?.name||''}"/></div>
         <div class="ig"><label>이메일</label><input type="email" id="ai-email" value="${CM?.email||''}" placeholder="이메일 주소 입력"/></div>
         <button class="btn btn-p" id="ai-save"><i class="ti ti-device-floppy"></i> 저장</button>
+      </div>
+    </div>
+    <!-- 데이터 재계산 -->
+    <div class="card" style="margin-bottom:10px">
+      <div class="ch"><i class="ti ti-refresh" style="color:#854F0B"></i><span>잔액 재계산</span></div>
+      <div style="padding:12px 16px">
+        <div class="nt nta" style="margin-bottom:10px"><i class="ti ti-alert-circle"></i>
+          <p>복지비·상조회비 잔액이 맞지 않을 때 사용하세요.<br/>승인된 내역만 기준으로 전체 잔액을 다시 계산합니다.</p>
+        </div>
+        <button class="btn btn-p" id="recalc-btn" style="background:#854F0B"><i class="ti ti-refresh"></i> 전체 잔액 재계산</button>
+        <div id="recalc-result" style="margin-top:8px;font-size:12px;color:var(--text2)"></div>
       </div>
     </div>
     <button class="btn btn-s" id="admin-logout-btn">
