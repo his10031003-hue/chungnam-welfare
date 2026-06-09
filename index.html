@@ -125,6 +125,7 @@ const db=getFirestore(fa), auth=getAuth(fa);
 
 const fmt=n=>Math.round(n||0).toLocaleString('ko-KR');
 const fmtW=n=>fmt(n)+'원';
+const fmtDt=d=>d instanceof Date?`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`:'';
 const thisYm=()=>{const d=new Date();return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`};
 const ymLabel=ym=>`${ym.slice(0,4)}년 ${parseInt(ym.slice(4))}월`;
 const today=()=>new Date().toISOString().slice(0,10);
@@ -202,6 +203,7 @@ const MTABS=[
   {id:'home',icon:'ti-home',label:'홈'},
   {id:'welfare',icon:'ti-credit-card',label:'복지신청'},
   {id:'sanjo',icon:'ti-heart',label:'상조회비'},
+  {id:'notice',icon:'ti-speakerphone',label:'공지사항'},
   {id:'myinfo',icon:'ti-user',label:'내 정보'}
 ];
 const ATABS=[
@@ -209,7 +211,7 @@ const ATABS=[
   {id:'admin-members',icon:'ti-users',label:'조합원'},
   {id:'admin-charge',icon:'ti-bolt',label:'충전'},
   {id:'admin-approve',icon:'ti-check',label:'승인'},
-  {id:'admin-catreq',icon:'ti-list-check',label:'카테고리'},
+  {id:'admin-notice',icon:'ti-speakerphone',label:'공지'},
   {id:'admin-myinfo',icon:'ti-user',label:'내 정보'}
 ];
 
@@ -224,8 +226,6 @@ async function go(pid){
   try{
     switch(pid){
       case 'home':html=await pgHome();break;
-      case 'history':html=await pgHistory();break;
-      case 'history-detail':html=await pgHistoryDetail();break;
       case 'welfare':html=await pgWelfare();break;
       case 'sanjo':html=await pgSanjo();break;
       case 'myinfo':html=pgMyInfo();break;
@@ -235,6 +235,8 @@ async function go(pid){
       case 'admin-charge':html=await pgACharge();break;
       case 'admin-approve':html=await pgAApprove();break;
       case 'admin-catreq':html=await pgACatReq();break;
+      case 'admin-notice':html=await pgANotice();break;
+      case 'notice':html=await pgNotice();break;
       case 'admin-myinfo':html=pgAdminMyInfo();break;
       default:html=`<div class="pg"><div class="em"><i class="ti ti-error-404"></i><p>없는 페이지</p></div></div>`;
     }
@@ -253,6 +255,8 @@ function bindPg(pid){
     case 'admin-charge':bACharge();break;
     case 'admin-approve':bAApprove();break;
     case 'admin-catreq':bACatReq();break;
+    case 'notice':bNotice();break;
+    case 'admin-notice':bANotice();break;
     case 'admin-myinfo':
       document.getElementById('admin-logout-btn')?.addEventListener('click',()=>signOut(auth));
       document.getElementById('ai-save')?.addEventListener('click',async()=>{
@@ -306,130 +310,6 @@ function bindPg(pid){
       });
       break;
   }
-}
-
-// ══ 월별 상세 내역 ══
-async function pgHistoryDetail(){
-  const ym=window._histYm||thisYm();
-  const year=ym.slice(0,4);
-  const month=parseInt(ym.slice(4));
-  const [wReqs,sanjos]=await Promise.all([getMyWReqs(CU.uid),getMySanjo(CU.uid)]);
-  const wList=wReqs.filter(r=>r.ym===ym);
-  const sList=sanjos.filter(s=>s.ym===ym);
-  const allReqs=[
-    ...wList.map(r=>({...r,type:'복지비',color:'#185FA5'})),
-    ...sList.map(s=>({...s,type:'상조회비',color:'#A32D2D',category:'sanjo',memo:s.note,usedDate:s.eventDate}))
-  ].sort((a,b)=>(a.usedDate||'').localeCompare(b.usedDate||''));
-
-  const totalW=wList.filter(r=>r.status==='approved').reduce((s,r)=>s+(r.amount||0),0);
-  const totalS=sList.filter(s=>s.status==='approved').reduce((s,r)=>s+(r.amount||0),0);
-
-  const rows=allReqs.length?allReqs.map(r=>{
-    const cat=r.type==='복지비'?(CATS[r.category]?.label||r.category):'상조회비';
-    return `<div class="lr">
-      <div class="ic" style="width:32px;height:32px;border-radius:50%;background:${r.color}20;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <i class="ti ${r.type==='복지비'?(CATS[r.category]?.icon||'ti-receipt'):'ti-heart'}" style="color:${r.color};font-size:13px"></i>
-      </div>
-      <div class="inf">
-        <div class="nm">${cat} · ${r.usedDate||''}</div>
-        <div class="sb">${r.memo||r.note||''}</div>
-        <span class="bdg ${stC(r.status)}" style="margin-top:3px">${stL(r.status)}</span>
-      </div>
-      <div class="am mn" style="font-size:13px;font-weight:700">-${fmtW(r.amount)}</div>
-    </div>`;
-  }).join(''):'<div class="em" style="padding:24px"><i class="ti ti-calendar-off"></i><p>이달 내역이 없습니다</p></div>';
-
-  return `<div class="hdr">
-    <div style="display:flex;align-items:center;gap:8px">
-      <button onclick="go('history')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px">← 뒤로</button>
-      <div><h2>${year}년 ${month}월 내역</h2><p>복지비·상조회비 상세</p></div>
-    </div>
-  </div>
-  <div class="pg">
-    <div class="sg" style="margin-bottom:10px">
-      <div class="sb2"><div class="vl" style="color:#185FA5;font-size:15px">${fmtW(totalW)}</div><div class="lb">복지비</div></div>
-      <div class="sb2"><div class="vl" style="color:#A32D2D;font-size:15px">${fmtW(totalS)}</div><div class="lb">상조회비</div></div>
-      <div class="sb2"><div class="vl" style="font-size:15px">${fmtW(totalW+totalS)}</div><div class="lb">합계</div></div>
-    </div>
-    <div class="card">${rows}</div>
-  </div>`;
-}
-
-// ══ 연도·월별 사용 현황 ══
-async function pgHistory(){
-  const thisYear=new Date().getFullYear();
-  const years=[thisYear,thisYear-1,thisYear-2];
-
-  // 모든 복지비·상조회비 내역 가져오기
-  const [wReqs,sanjos]=await Promise.all([getMyWReqs(CU.uid),getMySanjo(CU.uid)]);
-
-  // 연도 선택 (기본: 올해)
-  const selYear=window._histYear||thisYear;
-  const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
-
-  // 월별 데이터 집계
-  const monthData=months.map((_,i)=>{
-    const mm=String(i+1).padStart(2,'0');
-    const ym=`${selYear}${mm}`;
-    const wList=wReqs.filter(r=>r.ym===ym);
-    const sList=sanjos.filter(s=>s.ym===ym);
-    const wAmt=wList.filter(r=>r.status==='approved').reduce((s,r)=>s+(r.amount||0),0);
-    const sAmt=sList.filter(s=>s.status==='approved').reduce((s,r)=>s+(r.amount||0),0);
-    const wPending=wList.filter(r=>r.status==='pending').reduce((s,r)=>s+(r.amount||0),0);
-    return {mm,ym,wAmt,sAmt,wPending,total:wAmt+sAmt,hasData:wAmt+sAmt+wPending>0};
-  });
-
-  const yearTotal=monthData.reduce((s,m)=>s+m.total,0);
-  const yearWTotal=monthData.reduce((s,m)=>s+m.wAmt,0);
-  const yearSTotal=monthData.reduce((s,m)=>s+m.sAmt,0);
-
-  // 연도 탭
-  const yearTabs=years.map(y=>`
-    <button onclick="window._histYear=${y};go('history')" 
-      style="flex:1;padding:8px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;
-      background:${y===selYear?'var(--green)':'#f0f0ec'};color:${y===selYear?'#fff':'var(--text2)'}">
-      ${y}년
-    </button>`).join('');
-
-  // 월별 행
-  const monthRows=monthData.map((m,i)=>{
-    const isThis=m.ym===`${thisYear}${String(new Date().getMonth()+1).padStart(2,'0')}`;
-    return `<div style="display:flex;align-items:center;padding:9px 14px;border-bottom:.5px solid var(--border);${isThis?'background:#f0f7f4;':''}" onclick="window._histYm='${m.ym}';go('history-detail');" style="cursor:pointer">
-      <div style="width:36px;font-size:13px;font-weight:${isThis?700:500};color:${isThis?'var(--green)':'var(--text)'}">
-        ${i+1}월${isThis?'<div style="font-size:9px;color:var(--green)">이달</div>':''}
-      </div>
-      <div style="flex:1">
-        ${m.hasData?`
-          ${m.wAmt>0?`<div style="font-size:11px;color:#185FA5">복지비 ${fmtW(m.wAmt)}</div>`:''}
-          ${m.sAmt>0?`<div style="font-size:11px;color:#A32D2D">상조회비 ${fmtW(m.sAmt)}</div>`:''}
-          ${m.wPending>0?`<div style="font-size:10px;color:#854F0B">대기중 ${fmtW(m.wPending)}</div>`:''}
-        `:`<div style="font-size:11px;color:#ccc">내역 없음</div>`}
-      </div>
-      <div style="text-align:right">
-        ${m.total>0?`<div style="font-size:13px;font-weight:700;color:#A32D2D">-${fmtW(m.total)}</div>`:''}
-        ${m.hasData?`<i class="ti ti-chevron-right" style="font-size:12px;color:var(--text2)"></i>`:''}
-      </div>
-    </div>`;
-  }).join('');
-
-  return `<div class="hdr">
-    <div style="display:flex;align-items:center;gap:8px">
-      <button onclick="go('home')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px">← 뒤로</button>
-      <div><h2>사용 현황</h2><p>연도·월별 복지비 내역</p></div>
-    </div>
-  </div>
-  <div class="pg">
-    <div style="display:flex;gap:6px;margin-bottom:10px">${yearTabs}</div>
-    <div class="sg" style="margin-bottom:10px">
-      <div class="sb2"><div class="vl" style="font-size:15px;color:#A32D2D">${fmtW(yearTotal)}</div><div class="lb">${selYear}년 총 사용</div></div>
-      <div class="sb2"><div class="vl" style="font-size:15px;color:#185FA5">${fmtW(yearWTotal)}</div><div class="lb">복지비</div></div>
-      <div class="sb2"><div class="vl" style="font-size:15px;color:#A32D2D">${fmtW(yearSTotal)}</div><div class="lb">상조회비</div></div>
-    </div>
-    <div class="card">
-      <div class="ch"><i class="ti ti-calendar"></i><span>${selYear}년 월별 내역</span></div>
-      ${monthRows}
-    </div>
-  </div>`;
 }
 
 // ══ 홈 ══
@@ -493,7 +373,6 @@ async function pgHome(){
       <button class="btn btn-p" onclick="go('welfare')"><i class="ti ti-credit-card"></i> 복지 신청</button>
       <button class="btn btn-s" onclick="go('sanjo')"><i class="ti ti-heart"></i> 상조회비</button>
     </div>
-    <button class="btn btn-s" onclick="go('history')" style="margin-bottom:10px;width:100%"><i class="ti ti-calendar-stats"></i> 연도·월별 사용 현황</button>
     ${(usedRows||sanjoRow)?`<div class="card">
       <div class="ch"><i class="ti ti-receipt"></i><span>이달 사용 내역</span></div>
       ${usedRows}${sanjoRow}
@@ -1593,6 +1472,55 @@ function bACatReq(){
   }));
 }
 
+function bNotice(){
+  // 클릭 시 내용 펼치기/접기
+  document.querySelectorAll('.notice-item').forEach(card=>{
+    card.addEventListener('click',()=>{
+      const nid=card.dataset.nid;
+      const body=document.getElementById('nb-'+nid);
+      if(!body) return;
+      body.style.display=body.style.display==='none'?'block':'none';
+    });
+  });
+}
+
+function bANotice(){
+  // 공지 등록
+  document.getElementById('nc-submit')?.addEventListener('click',async()=>{
+    const title=document.getElementById('nc-title').value.trim();
+    const body=document.getElementById('nc-body').value.trim();
+    const pinned=document.getElementById('nc-pinned').checked;
+    if(!title) return showToast('제목을 입력하세요','err');
+    if(!body)  return showToast('내용을 입력하세요','err');
+    const btn=document.getElementById('nc-submit');
+    btn.disabled=true;
+    btn.innerHTML='<i class="ti ti-loader-2 spin"></i> 등록 중...';
+    try{
+      await addDoc(collection(db,'notices'),{
+        title, body, pinned,
+        authorName: CM?.name||'관리자',
+        authorUid: CU.uid,
+        createdAt: serverTimestamp()
+      });
+      showToast('공지가 등록됐습니다');
+      setTimeout(()=>go('admin-notice'),600);
+    }catch(e){
+      showToast('오류: '+e.message,'err');
+      btn.disabled=false;
+      btn.innerHTML='<i class="ti ti-send"></i> 공지 등록';
+    }
+  });
+  // 공지 삭제
+  document.querySelectorAll('.nc-del-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+    if(!confirm('이 공지를 삭제하시겠습니까?')) return;
+    try{
+      await deleteDoc(doc(db,'notices',btn.dataset.nid));
+      showToast('삭제됐습니다');
+      setTimeout(()=>go('admin-notice'),600);
+    }catch(e){showToast('오류: '+e.message,'err');}
+  }));
+}
+
 // ══ 관리자 내 정보 ══
 function pgAdminMyInfo(){
   return `<div class="hdr"><h2>내 정보</h2><p>${roleL(CM?.role)}</p></div>
@@ -1644,6 +1572,69 @@ function pgAdminMyInfo(){
     <button class="btn btn-s" id="admin-logout-btn">
       <i class="ti ti-logout"></i> 로그아웃
     </button>
+  </div>`;
+}
+
+// ══ 공지사항 (조합원 열람) ══
+async function pgNotice(){
+  const snap=await getDocs(query(collection(db,'notices'),orderBy('createdAt','desc'),limit(30)));
+  const list=snap.docs.map(d=>({id:d.id,...d.data()}));
+  return `<div class="hdr"><h2><i class="ti ti-speakerphone"></i> 공지사항</h2><p>조합 공지 및 안내</p></div>
+  <div class="pg">
+    ${list.length===0?`<div class="em"><i class="ti ti-speakerphone"></i><p>등록된 공지사항이 없습니다</p></div>`:''}
+    ${list.map(n=>`
+    <div class="card notice-item" data-nid="${n.id}" style="margin-bottom:10px;cursor:pointer">
+      <div style="padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          ${n.pinned?`<span style="background:#e74c3c;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700">공지</span>`:''}
+          <span style="font-size:14px;font-weight:600;flex:1">${n.title}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);display:flex;justify-content:space-between">
+          <span>${n.authorName||'관리자'}</span>
+          <span>${n.createdAt?.toDate?fmtDt(n.createdAt.toDate()):''}</span>
+        </div>
+        <div class="notice-body" id="nb-${n.id}" style="display:none;margin-top:10px;padding-top:10px;border-top:.5px solid var(--border);font-size:13px;line-height:1.6;white-space:pre-wrap">${n.body||''}</div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+// ══ 관리자 공지사항 관리 ══
+async function pgANotice(){
+  const snap=await getDocs(query(collection(db,'notices'),orderBy('createdAt','desc'),limit(50)));
+  const list=snap.docs.map(d=>({id:d.id,...d.data()}));
+  return `<div class="hdr"><h2><i class="ti ti-speakerphone"></i> 공지사항 관리</h2><p>공지 작성 및 관리</p></div>
+  <div class="pg">
+    <div class="card" style="margin-bottom:12px">
+      <div class="ch"><i class="ti ti-plus"></i><span>새 공지 작성</span></div>
+      <div style="padding:12px 16px">
+        <div class="ig"><label>제목</label><input type="text" id="nc-title" placeholder="공지 제목을 입력하세요"/></div>
+        <div class="ig"><label>내용</label><textarea id="nc-body" rows="5" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;font-family:inherit;background:var(--bg2)" placeholder="공지 내용을 입력하세요"></textarea></div>
+        <div class="ig" style="flex-direction:row;align-items:center;gap:8px">
+          <input type="checkbox" id="nc-pinned" style="width:16px;height:16px"/>
+          <label for="nc-pinned" style="font-size:13px;margin:0">상단 고정 (중요 공지)</label>
+        </div>
+        <button class="btn btn-p" id="nc-submit"><i class="ti ti-send"></i> 공지 등록</button>
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:8px">등록된 공지 (${list.length}건)</div>
+    ${list.length===0?`<div class="em"><i class="ti ti-speakerphone"></i><p>등록된 공지가 없습니다</p></div>`:''}
+    ${list.map(n=>`
+    <div class="card" style="margin-bottom:8px">
+      <div style="padding:12px 16px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+              ${n.pinned?`<span style="background:#e74c3c;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700">공지</span>`:''}
+              <span style="font-size:13px;font-weight:600">${n.title}</span>
+            </div>
+            <div style="font-size:11px;color:var(--text2)">${n.createdAt?.toDate?fmtDt(n.createdAt.toDate()):''}</div>
+          </div>
+          <button class="btn btn-s nc-del-btn" data-nid="${n.id}" style="padding:4px 10px;font-size:12px;background:#e74c3c;color:#fff;flex-shrink:0"><i class="ti ti-trash"></i> 삭제</button>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--text2);white-space:pre-wrap;max-height:80px;overflow:hidden;line-height:1.5">${(n.body||'').substring(0,200)}${(n.body||'').length>200?'…':''}</div>
+      </div>
+    </div>`).join('')}
   </div>`;
 }
 
