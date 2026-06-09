@@ -793,11 +793,15 @@ async function pgADash(){
   const active=members.filter(m=>m.status==='active');
   const pending=members.filter(m=>m.status==='pending');
   const withdraw=members.filter(m=>m.status==='withdraw');
-  // 이달 납부 완료: active 회원 중 paid=true 인 limit만 카운트
-  const activeLimits=limits.filter(l=>active.find(m=>m.id===l.uid)&&l.paid);
-  const paid=activeLimits.length;
-  // 이달 충전액: active 회원 limit만 합산
-  const totalCharge=activeLimits.reduce((s,l)=>s+(l.chargeAmount||0),0);
+  const lmap=Object.fromEntries(limits.map(l=>[l.uid,l]));
+  // 납부 완료: active 회원 중 paid=true
+  const paidMembers=active.filter(m=>lmap[m.id]?.paid);
+  const paid=paidMembers.length;
+  // 총 충전액: 납부완료 회원의 dues 기준으로 실시간 계산
+  const totalCharge=paidMembers.reduce((s,m)=>s+calcCharge(m.dues||0,m.chargeRate??90),0);
+  // 전체 조합비 합계
+  const totalDues=active.reduce((s,m)=>s+(m.dues||0),0);
+  const paidDues=paidMembers.reduce((s,m)=>s+(m.dues||0),0);
   const pS=sanjos.filter(s=>s.status==='pending');
   const pW=wReqs.filter(r=>r.status==='pending');
   const paidPct=active.length?Math.round(paid/active.length*100):0;
@@ -827,10 +831,18 @@ async function pgADash(){
           <span style="font-size:13px;font-weight:600">${paid} / ${active.length}명</span>
         </div>
         <div class="pw"><div class="pf" style="width:${paidPct}%"></div></div>
-        ${totalCharge>0?`<div style="display:flex;justify-content:space-between;margin-top:6px">
-          <span style="font-size:12px;color:var(--text2)">이달 총 충전액</span>
+        <div style="display:flex;justify-content:space-between;margin-top:6px">
+          <span style="font-size:12px;color:var(--text2)">수납 조합비</span>
+          <span style="font-size:12px;font-weight:700">${fmtW(paidDues)}</span>
+        </div>
+        ${totalCharge>0?`<div style="display:flex;justify-content:space-between;margin-top:4px">
+          <span style="font-size:12px;color:var(--text2)">총 충전액 (90%)</span>
           <span style="font-size:12px;font-weight:700;color:var(--green)">${fmtW(totalCharge)}</span>
         </div>`:''}
+        <div style="display:flex;justify-content:space-between;margin-top:4px">
+          <span style="font-size:12px;color:var(--text2)">전체 조합비 (미납포함)</span>
+          <span style="font-size:12px;color:var(--text2)">${fmtW(totalDues)}</span>
+        </div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
