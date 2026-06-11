@@ -645,7 +645,7 @@ function bWelfare(){
 
     try{
       // Tesseract OCR (한국어+영어)
-      const result=await Tesseract.recognize(file,'kor+eng',{
+      const result=await window.Tesseract.recognize(file,'kor+eng',{
         logger:m=>{
           if(m.status==='recognizing text'){
             const pct=Math.round((m.progress||0)*100);
@@ -2428,6 +2428,7 @@ function renderLogin(){
 }
 
 // ══ 초기화 ══
+window.go=go;
 appEl.innerHTML=`<div class="lw"><i class="ti ti-loader-2 spin" style="font-size:40px;color:#fff"></i></div>`;
 onAuthStateChanged(auth,async user=>{
   if(!user){renderLogin();return;}
@@ -2435,7 +2436,6 @@ onAuthStateChanged(auth,async user=>{
   if(!CM){showToast('회원 정보를 찾을 수 없습니다','err');await signOut(auth);return;}
   go(['admin','sub_admin','finance'].includes(CM.role)?'admin-dash':'home');
 });
-window.go=go;
 </script>
 </body>
 </html>
