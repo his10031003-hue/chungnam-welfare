@@ -193,7 +193,7 @@ const getMyDonations=async uid=>{try{const s=await getDocs(query(collection(db,'
 const getAllDonations=async()=>{try{const s=await getDocs(query(collection(db,'donations'),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
 const updateDonation=(id,data)=>updateDoc(doc(db,'donations',id),{...data,updatedAt:serverTimestamp()});
 // 조합비 변경 신청
-const getPartners=async()=>{try{const s=await getDocs(query(collection(db,'partners'),orderBy('category'),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const getPartners=async()=>{try{const s=await getDocs(query(collection(db,'partners'),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
 const addPartner=data=>addDoc(collection(db,'partners'),{...data,createdAt:serverTimestamp()});
 const updatePartner=(id,data)=>updateDoc(doc(db,'partners',id),data);
 const deletePartner=id=>deleteDoc(doc(db,'partners',id));
