@@ -17,6 +17,7 @@
   <link rel="apple-touch-icon" href="icon-192.png"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root{--green:#004A2F;--text:#1a1a1a;--text2:#6b6b6b;--border:rgba(0,0,0,0.1);--bg:#f4f4f0;--bg2:#f4f4f0;--card:#fff;--r:12px}
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -129,6 +130,7 @@ const fmt=n=>Math.round(n||0).toLocaleString('ko-KR');
 const fmtW=n=>fmt(n)+'원';
 const fmtDt=d=>d instanceof Date?`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`:'';
 const thisYm=()=>{const d=new Date();return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`};
+const prevYm=()=>{const d=new Date();d.setMonth(d.getMonth()-1);return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`};
 const ymLabel=ym=>`${ym.slice(0,4)}년 ${parseInt(ym.slice(4))}월`;
 const today=()=>new Date().toISOString().slice(0,10);
 const appEl=document.getElementById('app');
@@ -157,14 +159,16 @@ async function notify(title,message,from,phone=''){
 }
 
 const CATS={
-  coffee:{label:'커피·음료',icon:'ti-coffee',color:'#185FA5'},
+  coffee:{label:'커피·음료·제과',icon:'ti-coffee',color:'#185FA5'},
   health:{label:'건강·약국',icon:'ti-first-aid-kit',color:'#3B6D11'},
   culture:{label:'문화·여가',icon:'ti-movie',color:'#854F0B'},
-  edu:{label:'교육비',icon:'ti-school',color:'#0F6E56'},
+  edu:{label:'학원·과외 등 교육비',icon:'ti-school',color:'#0F6E56'},
   fuel:{label:'유류지원',icon:'ti-gas-station',color:'#A32D2D'},
-  food:{label:'음식',icon:'ti-tools-kitchen-2',color:'#534AB7'},
-  mart:{label:'마트',icon:'ti-shopping-cart',color:'#BA7517'},
-  online:{label:'온라인',icon:'ti-device-laptop',color:'#185F7A'},
+  food:{label:'교통·음식·숙박',icon:'ti-tools-kitchen-2',color:'#534AB7'},
+  mart:{label:'편의점·마트 등',icon:'ti-shopping-cart',color:'#BA7517'},
+  local:{label:'지역상품권',icon:'ti-ticket',color:'#0F766E'},
+  online:{label:'온라인 매장',icon:'ti-device-laptop',color:'#185F7A'},
+  etc:{label:'기타 (생활 필수경비 등)',icon:'ti-dots-circle-horizontal',color:'#6B6B6B'},
 };
 const CK=Object.keys(CATS);
 
@@ -246,6 +250,7 @@ async function go(pid){
       case 'admin-catreq':html=await pgACatReq();break;
       case 'admin-notice':html=await pgANotice();break;
       case 'partners':html=await pgPartners();break;
+      case 'membercard':html=pgMemberCard();break;
       case 'admin-partners':html=await pgAPartners();break;
       case 'admin-settings':html=await pgASettings();break;
       case 'notice':html=await pgNotice();break;
@@ -261,6 +266,7 @@ async function go(pid){
 function bindPg(pid){
   switch(pid){
     case 'welfare':bWelfare();break;
+    case 'membercard':bMemberCard();break;
     case 'sanjo':bSanjo();break;
     case 'myinfo':bMyInfo();break;
     case 'admin-members':bAMembers();break;
@@ -330,18 +336,21 @@ function bindPg(pid){
 // ══ 홈 ══
 async function pgHome(){
   const ym=thisYm();
-  const [lim,settings]=await Promise.all([getLimit(CU.uid,ym),getSettings()]);
+  const pym=prevYm();
+  const [lim,limPrev,settings]=await Promise.all([getLimit(CU.uid,ym),getLimit(CU.uid,pym),getSettings()]);
   const dues=CM?.dues||0,rate=CM?.chargeRate??90;
   const charge=calcCharge(dues,rate);
-  // 전체 복지비 통합 (카테고리 구분 없이)
   const totalCharge=lim?.totalCharge||lim?.chargeAmount||charge;
   const usedAmts=lim?.usedAmounts||{};
   const totalUsed=Object.values(usedAmts).reduce((s,v)=>s+v,0);
-  // 상조회비 사용액도 차감
   const sanjoUsed=lim?.sanjoUsed||0;
   const totalAllUsed=totalUsed+sanjoUsed;
   const remain=Math.max(0,totalCharge-totalAllUsed);
-  const pct=totalCharge>0?Math.round(totalAllUsed/totalCharge*100):0;
+
+  // 이월액: 전월 충전액 - 전월 사용액 (잔액이 있었다면 이월)
+  const prevCharge=limPrev?.totalCharge||limPrev?.chargeAmount||0;
+  const prevUsed=Object.values(limPrev?.usedAmounts||{}).reduce((s,v)=>s+v,0)+(limPrev?.sanjoUsed||0);
+  const carryOver=Math.max(0,prevCharge-prevUsed);
 
   // 사용 내역 카드
   const usedRows=CK.filter(k=>(usedAmts[k]||0)>0).map(k=>{
@@ -372,23 +381,38 @@ async function pgHome(){
   </div>
   <div class="pg">
     ${CM?.status==='pending'?'<div class="nt nta"><i class="ti ti-clock"></i><p>가입 승인 대기 중입니다. 관리자 승인 후 서비스를 이용할 수 있습니다.</p></div>':''}
+
+    <!-- 복지비 요약 카드 -->
     <div style="background:var(--green);border-radius:14px;padding:18px;color:#fff;margin-bottom:10px">
-      <div style="font-size:11px;opacity:.6;margin-bottom:4px">이달 잔여 복지비</div>
-      <div style="font-size:32px;font-weight:700">${fmt(remain)}<span style="font-size:15px;opacity:.7;margin-left:3px">원</span></div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px">
-        <span style="font-size:11px;opacity:.6">총 복지비 ${fmtW(totalCharge)}</span>
-        <span style="font-size:11px;opacity:.6">사용 ${fmtW(totalAllUsed)}</span>
+      <div style="font-size:11px;opacity:.6;margin-bottom:10px">${ymLabel(ym)} 복지비 현황</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:8px">
+          <span style="font-size:12px;opacity:.75">이달 복지비 사용액</span>
+          <span style="font-size:16px;font-weight:700;color:#FFD600">-${fmtW(totalAllUsed)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:8px">
+          <span style="font-size:12px;opacity:.75">복지비 잔액</span>
+          <span style="font-size:20px;font-weight:700">${fmtW(remain)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:12px;opacity:.75">이월액 <span style="font-size:10px;opacity:.7">(전월 미사용)</span></span>
+          <span style="font-size:15px;font-weight:600;color:${carryOver>0?'#86efac':'rgba(255,255,255,.5)'}">${fmtW(carryOver)}</span>
+        </div>
       </div>
-      <div style="margin-top:8px;background:rgba(255,255,255,.15);border-radius:3px;height:5px;overflow:hidden">
-        <div style="width:${pct}%;height:100%;background:#FFD600;border-radius:3px"></div>
+      <div style="margin-top:10px;background:rgba(255,255,255,.15);border-radius:3px;height:4px;overflow:hidden">
+        <div style="width:${totalCharge>0?Math.round(totalAllUsed/totalCharge*100):0}%;height:100%;background:#FFD600;border-radius:3px"></div>
       </div>
-      <div style="font-size:10px;opacity:.5;margin-top:4px">${lim?.charged?'충전완료':'미충전'}</div>
+      <div style="font-size:10px;opacity:.4;margin-top:4px">총 복지비 ${fmtW(totalCharge)} · ${lim?.charged?'충전완료':'미충전'}</div>
     </div>
+
+    <!-- 바로가기 버튼 -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <button class="btn btn-p" onclick="go('welfare')"><i class="ti ti-credit-card"></i> 복지 신청</button>
+      <button class="btn btn-p" onclick="go('welfare')"><i class="ti ti-credit-card"></i> 복지비 신청</button>
       <button class="btn btn-s" onclick="go('sanjo')"><i class="ti ti-heart"></i> 상조회비</button>
     </div>
-    ${(usedRows||sanjoRow)?`<div class="card">
+
+    <!-- 사용 내역 -->
+    ${(usedRows||sanjoRow)?`<div class="card" style="margin-bottom:10px">
       <div class="ch"><i class="ti ti-receipt"></i><span>이달 사용 내역</span></div>
       ${usedRows}${sanjoRow}
       <div class="lr" style="padding:8px 16px;border-top:.5px solid var(--border)">
@@ -396,15 +420,28 @@ async function pgHome(){
         <div class="am mn" style="font-size:13px;font-weight:700">-${fmtW(totalAllUsed)}</div>
       </div>
     </div>`:''}
-    <div class="card">
-      <div class="ch"><i class="ti ti-coins"></i><span>이달 조합비</span></div>
-      <div class="lr"><div class="ic icb"><i class="ti ti-cash"></i></div>
-        <div class="inf"><div class="nm">월 납부 조합비</div><div class="sb">납부계좌: ${CM?.bankAccount||'미등록'}</div></div>
-        <div class="am">${fmtW(dues)}</div></div>
-      <div class="lr"><div class="ic icg"><i class="ti ti-credit-card"></i></div>
-        <div class="inf"><div class="nm">복지 충전액</div><div class="sb">수령계좌: ${CM?.welfareAccount||'미등록'}</div></div>
-        <div class="am pl">${fmtW(charge)}</div></div>
+
+    <!-- 공지·제휴·조합원증·내정보 바로가기 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div onclick="go('notice')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
+        <i class="ti ti-speakerphone" style="font-size:22px;color:#854F0B;display:block;margin-bottom:5px"></i>
+        <div style="font-size:11px;font-weight:600;color:var(--text)">공지사항</div>
+      </div>
+      <div onclick="go('partners')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
+        <i class="ti ti-building-store" style="font-size:22px;color:#185FA5;display:block;margin-bottom:5px"></i>
+        <div style="font-size:11px;font-weight:600;color:var(--text)">제휴업체</div>
+      </div>
+      <div onclick="go('membercard')" style="background:linear-gradient(135deg,#004A2F,#0F6E56);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
+        <i class="ti ti-id-badge-2" style="font-size:22px;color:#FFD600;display:block;margin-bottom:5px"></i>
+        <div style="font-size:11px;font-weight:600;color:#fff">조합원증</div>
+      </div>
+      <div onclick="go('myinfo')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
+        <i class="ti ti-user" style="font-size:22px;color:#0F6E56;display:block;margin-bottom:5px"></i>
+        <div style="font-size:11px;font-weight:600;color:var(--text)">내 정보</div>
+      </div>
     </div>
+
+    <!-- 조합 계좌 납부 안내 -->
     ${settings?.unionAccount?`<div class="card" style="margin-bottom:10px">
       <div class="ch"><i class="ti ti-building-bank" style="color:#185FA5"></i><span>조합비 납부 안내</span></div>
       <div style="padding:12px 16px">
@@ -415,7 +452,7 @@ async function pgHome(){
           <div>
             <div style="font-size:11px;color:var(--text2);margin-bottom:3px">조합 계좌</div>
             <div style="font-size:15px;font-weight:700;color:#004A2F;letter-spacing:.3px" id="union-acc-text">${settings.unionAccount}</div>
-            ${settings.unionBank?`<div style="font-size:12px;color:var(--text2);margin-top:2px">${settings.unionBank}</div>`:''}
+            ${settings.unionBank?`<div style="font-size:12px;color:var(--text2);margin-top:2px">${settings.unionBank}${settings.unionHolder?' · '+settings.unionHolder:''}</div>`:''}
           </div>
           <button onclick="copyUnionAcc()" style="flex-shrink:0;padding:7px 12px;border-radius:7px;border:none;background:#004A2F;color:#fff;font-size:12px;font-weight:600;cursor:pointer"><i class="ti ti-copy" style="font-size:12px"></i> 복사</button>
         </div>
@@ -424,6 +461,36 @@ async function pgHome(){
     </div>`:''}
   </div>`;
 }
+  const dues=CM?.dues||0,rate=CM?.chargeRate??90;
+  const charge=calcCharge(dues,rate);
+  // 전체 복지비 통합 (카테고리 구분 없이)
+  const totalCharge=lim?.totalCharge||lim?.chargeAmount||charge;
+  const usedAmts=lim?.usedAmounts||{};
+  const totalUsed=Object.values(usedAmts).reduce((s,v)=>s+v,0);
+  // 상조회비 사용액도 차감
+  const sanjoUsed=lim?.sanjoUsed||0;
+  const totalAllUsed=totalUsed+sanjoUsed;
+  const remain=Math.max(0,totalCharge-totalAllUsed);
+  const pct=totalCharge>0?Math.round(totalAllUsed/totalCharge*100):0;
+
+  // 사용 내역 카드
+  const usedRows=CK.filter(k=>(usedAmts[k]||0)>0).map(k=>{
+    const c=CATS[k];
+    return `<div class="lr" style="padding:8px 16px">
+      <div class="ic" style="width:28px;height:28px;background:#f0f0ec;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="ti ${c.icon}" style="color:${c.color};font-size:13px"></i>
+      </div>
+      <div class="inf"><div class="nm" style="font-size:12px">${c.label}</div></div>
+      <div class="am mn" style="font-size:12px">-${fmtW(usedAmts[k])}</div>
+    </div>`;
+  }).join('');
+  const sanjoRow=sanjoUsed>0?`<div class="lr" style="padding:8px 16px">
+    <div class="ic" style="width:28px;height:28px;background:#FCEBEB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <i class="ti ti-heart" style="color:#A32D2D;font-size:13px"></i>
+    </div>
+    <div class="inf"><div class="nm" style="font-size:12px">상조회비</div></div>
+    <div class="am mn" style="font-size:12px">-${fmtW(sanjoUsed)}</div>
+  </div>`:'';
 
 // ══ 복지비 신청 ══
 async function pgWelfare(){
@@ -461,6 +528,34 @@ async function pgWelfare(){
   </div>
   <div class="pg">
     ${pendingAmt>0?`<div class="nt nta"><i class="ti ti-clock"></i><p>승인 대기 중인 신청액 <strong>${fmtW(pendingAmt)}</strong> — 승인 후 잔액에서 차감됩니다.</p></div>`:''}
+
+    <!-- 영수증 스캔 버튼 -->
+    <div class="card" style="margin-bottom:10px">
+      <div class="ch"><i class="ti ti-scan" style="color:#534AB7"></i><span>영수증 스캔 자동입력</span>
+        <span style="font-size:10px;color:var(--text2);margin-left:auto">OCR로 금액·날짜 자동 추출</span>
+      </div>
+      <div style="padding:12px 16px">
+        <input type="file" id="receipt-file" accept="image/*" capture="environment" style="display:none"/>
+        <button class="btn btn-p" id="scan-btn" style="background:#534AB7">
+          <i class="ti ti-camera"></i> 카메라로 영수증 촬영
+        </button>
+        <button class="btn btn-s" id="gallery-btn" style="margin-top:6px">
+          <i class="ti ti-photo"></i> 갤러리에서 선택
+        </button>
+        <div id="scan-preview" style="display:none;margin-top:10px">
+          <img id="scan-img" style="width:100%;border-radius:8px;max-height:180px;object-fit:cover"/>
+        </div>
+        <div id="scan-result" style="display:none;margin-top:10px;padding:10px;background:#EDECFB;border-radius:8px">
+          <div style="font-size:11px;color:#3730A3;font-weight:600;margin-bottom:6px"><i class="ti ti-scan"></i> OCR 인식 결과 — 내용 확인 후 신청하세요</div>
+          <div id="scan-result-body" style="font-size:12px;color:#3730A3;line-height:1.6"></div>
+        </div>
+        <div id="scan-loading" style="display:none;text-align:center;padding:16px;color:#534AB7">
+          <i class="ti ti-loader-2 spin" style="font-size:24px;display:block;margin-bottom:6px"></i>
+          <div style="font-size:12px">영수증 분석 중...</div>
+        </div>
+      </div>
+    </div>
+
     <div class="card" style="padding:14px 16px">
       <div class="ig"><label>카테고리</label><select id="w-cat">${opts}</select></div>
       <div class="ig">
@@ -483,6 +578,123 @@ async function pgWelfare(){
 
 function bWelfare(){
   document.getElementById('w-date').value=today();
+
+  // ── 영수증 스캔 (무료 OCR) ──
+  // 카테고리 키워드 매핑
+  const CAT_KEYWORDS={
+    coffee:['카페','커피','스타벅스','투썸','빽다방','이디야','할리스','메가커피','공차','버블티','베이커리','뚜레쥬르','파리바게뜨','파리크라상','브레드','케이크','제과','빵'],
+    food:['식당','음식','한식','중식','일식','분식','치킨','피자','버거','햄버거','KFC','롯데리아','맥도날드','버스','지하철','택시','카카오택시','우버','숙박','호텔','펜션','모텔','고속도로','주유','기차','KTX','항공'],
+    mart:['마트','이마트','홈플러스','롯데마트','코스트코','편의점','CU','GS25','세븐','미니스톱','올리브영','다이소'],
+    health:['병원','의원','약국','한의원','치과','안과','피부과','정형외과','내과','약'],
+    culture:['영화','CGV','롯데시네마','메가박스','공연','전시','박물관','문화','스포츠','헬스','피트니스','수영'],
+    edu:['학원','과외','교육','학습','어학','영어','수학','학교','대학','도서','책','교재'],
+    fuel:['주유소','GS칼텍스','SK에너지','현대오일','S-OIL','오일뱅크','정비','타이어','자동차'],
+    local:['상품권','온누리','지역화폐','제로페이'],
+    online:['쿠팡','네이버','G마켓','옥션','11번가','위메프','티몬','인터파크','배민','요기요','배달'],
+    etc:[]
+  };
+
+  const classifyCategory=(text)=>{
+    const lower=text.toLowerCase();
+    for(const [cat,keywords] of Object.entries(CAT_KEYWORDS)){
+      if(keywords.some(kw=>lower.includes(kw))) return cat;
+    }
+    return 'etc';
+  };
+
+  const parseReceipt=(text)=>{
+    // 금액 추출: 가장 큰 숫자(합계)
+    const amountMatches=[...text.matchAll(/(\d{1,3}(?:,\d{3})*|\d+)\s*원/g)];
+    const amounts=amountMatches.map(m=>parseInt(m[1].replace(/,/g,''))).filter(n=>n>0);
+    const amount=amounts.length?Math.max(...amounts):0;
+
+    // 날짜 추출
+    const dateMatch=text.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/)||
+                    text.match(/(\d{2,4})[년]\s*(\d{1,2})[월]\s*(\d{1,2})/);
+    let date=today();
+    if(dateMatch){
+      const y=dateMatch[1].length===2?'20'+dateMatch[1]:dateMatch[1];
+      const m=String(dateMatch[2]).padStart(2,'0');
+      const d=String(dateMatch[3]).padStart(2,'0');
+      date=`${y}-${m}-${d}`;
+    }
+
+    // 업체명 추출: 첫 번째 줄 또는 상호명 패턴
+    const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.length>1&&l.length<30);
+    const memo=lines[0]||'';
+
+    // 카테고리 분류
+    const category=classifyCategory(text);
+
+    return {amount,date,memo,category};
+  };
+
+  const doScan=async(file)=>{
+    if(!file) return;
+    // 미리보기
+    const reader=new FileReader();
+    reader.onload=e=>{
+      document.getElementById('scan-img').src=e.target.result;
+      document.getElementById('scan-preview').style.display='block';
+    };
+    reader.readAsDataURL(file);
+
+    document.getElementById('scan-loading').style.display='block';
+    document.getElementById('scan-result').style.display='none';
+    document.getElementById('scan-loading').querySelector('div').textContent='영수증 텍스트 인식 중... (10~20초)';
+
+    try{
+      // Tesseract OCR (한국어+영어)
+      const result=await Tesseract.recognize(file,'kor+eng',{
+        logger:m=>{
+          if(m.status==='recognizing text'){
+            const pct=Math.round((m.progress||0)*100);
+            const el=document.getElementById('scan-loading')?.querySelector('div');
+            if(el) el.textContent=`영수증 인식 중... ${pct}%`;
+          }
+        }
+      });
+      const text=result.data.text||'';
+      if(!text.trim()) throw new Error('텍스트를 인식하지 못했습니다. 더 선명한 사진을 이용해 주세요.');
+
+      const parsed=parseReceipt(text);
+
+      // 폼 자동입력
+      if(parsed.category) document.getElementById('w-cat').value=parsed.category;
+      if(parsed.amount>0) document.getElementById('w-amt').value=parsed.amount;
+      if(parsed.date)     document.getElementById('w-date').value=parsed.date;
+      if(parsed.memo)     document.getElementById('w-memo').value=parsed.memo;
+      document.getElementById('w-amt')?.dispatchEvent(new Event('input'));
+
+      const cat=CATS[parsed.category];
+      document.getElementById('scan-result-body').innerHTML=
+        `<div>📂 카테고리: <strong>${cat?cat.label:parsed.category}</strong></div>
+         <div>💰 금액: <strong>${fmtW(parsed.amount)}</strong></div>
+         <div>📅 날짜: <strong>${parsed.date}</strong></div>
+         <div>🏪 업체: <strong>${parsed.memo||'-'}</strong></div>
+         <div style="margin-top:6px;font-size:11px;opacity:.7">내용이 다르면 아래 폼에서 직접 수정하세요</div>`;
+      document.getElementById('scan-result').style.display='block';
+      showToast('인식 완료! 내용을 확인하세요');
+    }catch(e){
+      showToast('인식 오류: '+e.message,'err');
+    }finally{
+      document.getElementById('scan-loading').style.display='none';
+    }
+  };
+
+  document.getElementById('scan-btn')?.addEventListener('click',()=>{
+    const f=document.getElementById('receipt-file');
+    f.setAttribute('capture','environment');
+    f.click();
+  });
+  document.getElementById('gallery-btn')?.addEventListener('click',()=>{
+    const f=document.getElementById('receipt-file');
+    f.removeAttribute('capture');
+    f.click();
+  });
+  document.getElementById('receipt-file')?.addEventListener('change',e=>{
+    if(e.target.files[0]) doScan(e.target.files[0]);
+  });
 
   // 금액 입력 시 잔액 실시간 표시
   document.getElementById('w-amt')?.addEventListener('input',function(){
@@ -1615,7 +1827,112 @@ function pgAdminMyInfo(){
   </div>`;
 }
 
-// ══ 제휴업체 (조합원 열람) ══
+// ══ 조합원증 ══
+function pgMemberCard(){
+  const joinDate=CM?.createdAt?.toDate?CM.createdAt.toDate():new Date();
+  const joinYmd=fmtDt(joinDate);
+  // 조합원 번호: uid 앞 8자리 대문자
+  const memberNo='CN-'+CU.uid.slice(0,8).toUpperCase();
+  // 유효기간: 가입년도+1년 ~ 매년 갱신 (현재연도 12월31일)
+  const validUntil=`${new Date().getFullYear()}.12.31`;
+  const jobLabel=CM?.jobType==='전직'?'전직 (사무총국)':CM?.jobType==='현직'?`현직 (${CM?.dept||''})`:CM?.dept||'';
+  // QR 데이터: 검증용 URL
+  const qrData=`https://his10031003-hue.github.io/chungnam-welfare?verify=${CU.uid.slice(0,12)}`;
+  const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrData)}&bgcolor=004A2F&color=ffffff&margin=8`;
+
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div><h2><i class="ti ti-id-badge-2"></i> 조합원증</h2><p>충남도청 조합원 확인증</p></div>
+      <button onclick="printMemberCard()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px"><i class="ti ti-download"></i> 저장</button>
+    </div>
+  </div>
+  <div class="pg">
+    <div class="nt ntb" style="margin-bottom:12px"><i class="ti ti-info-circle"></i>
+      <p>본 확인증은 충남도청 조합원임을 증명합니다.<br/>신분증 미지참 시 보조 확인용으로 활용하세요.</p>
+    </div>
+
+    <!-- 조합원증 카드 -->
+    <div id="member-card-print" style="background:linear-gradient(145deg,#004A2F 0%,#0a6640 60%,#0F6E56 100%);border-radius:16px;padding:22px 20px;color:#fff;margin-bottom:12px;position:relative;overflow:hidden">
+      <!-- 배경 장식 -->
+      <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+      <div style="position:absolute;bottom:-20px;left:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.04)"></div>
+
+      <!-- 상단: 로고·기관명 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:32px;height:32px;background:#FFD600;border-radius:8px;display:flex;align-items:center;justify-content:center">
+            <i class="ti ti-building-community" style="color:#004A2F;font-size:18px"></i>
+          </div>
+          <div>
+            <div style="font-size:11px;opacity:.6;line-height:1.2">충청남도청</div>
+            <div style="font-size:13px;font-weight:700;line-height:1.2">공무원 직장조합</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:9px;opacity:.5;margin-bottom:2px">조합원증</div>
+          <div style="font-size:10px;background:rgba(255,215,0,.2);color:#FFD600;padding:2px 7px;border-radius:10px;font-weight:700">MEMBER CARD</div>
+        </div>
+      </div>
+
+      <!-- 이름·조합원번호 -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:26px;font-weight:700;letter-spacing:.5px;margin-bottom:4px">${CM?.name||''}</div>
+        <div style="font-size:12px;opacity:.7">${jobLabel}</div>
+      </div>
+
+      <!-- 구분선 -->
+      <div style="border-top:1px solid rgba(255,255,255,.15);margin-bottom:14px"></div>
+
+      <!-- 하단: 정보 + QR -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div>
+            <div style="font-size:9px;opacity:.5;margin-bottom:1px">조합원 번호</div>
+            <div style="font-size:13px;font-weight:700;letter-spacing:1px;font-family:monospace">${memberNo}</div>
+          </div>
+          <div>
+            <div style="font-size:9px;opacity:.5;margin-bottom:1px">가입일</div>
+            <div style="font-size:11px;opacity:.85">${joinYmd||'-'}</div>
+          </div>
+          <div>
+            <div style="font-size:9px;opacity:.5;margin-bottom:1px">유효기간</div>
+            <div style="font-size:11px;opacity:.85">~ ${validUntil}</div>
+          </div>
+        </div>
+        <!-- QR코드 -->
+        <div style="text-align:center">
+          <img src="${qrUrl}" style="width:80px;height:80px;border-radius:8px" onerror="this.style.display='none'"/>
+          <div style="font-size:8px;opacity:.4;margin-top:3px">진위확인</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 안내사항 -->
+    <div class="card">
+      <div class="ch"><i class="ti ti-shield-check" style="color:#0F6E56"></i><span>이용 안내</span></div>
+      <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:12px;color:var(--text2);display:flex;gap:8px">
+          <i class="ti ti-point" style="flex-shrink:0;margin-top:2px"></i>
+          <span>본 확인증은 공무원증 분실·미소지 시 보조 신분 확인용으로 활용할 수 있습니다.</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);display:flex;gap:8px">
+          <i class="ti ti-point" style="flex-shrink:0;margin-top:2px"></i>
+          <span>QR코드로 조합원 가입 여부를 확인할 수 있습니다.</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);display:flex;gap:8px">
+          <i class="ti ti-point" style="flex-shrink:0;margin-top:2px"></i>
+          <span>유효기간은 매년 자동 갱신되며, 탈퇴 시 즉시 무효화됩니다.</span>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function bMemberCard(){
+  // 저장 버튼 — 스크린샷 안내
+}
+window.printMemberCard=function(){
+  showToast('스크린샷으로 저장하세요 (전원+볼륨하 또는 홈+전원)');
+};
 const PCAT={
   food:{label:'음식점',icon:'ti-tools-kitchen-2',color:'#534AB7'},
   cafe:{label:'카페·음료',icon:'ti-coffee',color:'#185FA5'},
@@ -1631,10 +1948,36 @@ async function pgPartners(){
   const list=await getPartners();
   const cats=Object.keys(PCAT);
   const byCat=Object.fromEntries(cats.map(k=>[k,list.filter(p=>p.category===k)]));
-  const hasSome=list.length>0;
+  const catOpts=Object.entries(PCAT).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
   return `<div class="hdr"><h2><i class="ti ti-building-store"></i> 제휴업체</h2><p>조합원 전용 할인 혜택</p></div>
   <div class="pg">
-    ${!hasSome?`<div class="em"><i class="ti ti-building-store"></i><p>등록된 제휴업체가 없습니다</p></div>`:''}
+    <!-- 조합원 직접 등록 폼 -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="ch" id="pt-form-toggle" style="cursor:pointer">
+        <i class="ti ti-plus" style="color:#185FA5"></i>
+        <span>업체 직접 등록하기</span>
+        <i class="ti ti-chevron-down" id="pt-chevron" style="margin-left:auto;font-size:14px;color:var(--text2)"></i>
+      </div>
+      <div id="pt-member-form" style="display:none;padding:12px 16px">
+        <div class="nt ntb" style="margin-bottom:10px"><i class="ti ti-info-circle"></i>
+          <p>조합원이 직접 이용해 본 할인업체를 등록할 수 있습니다.<br/>관리자 검토 후 게시됩니다.</p>
+        </div>
+        <div class="ig"><label>업체명 *</label><input type="text" id="ptm-name" placeholder="예: 홍길동 한식당"/></div>
+        <div class="ig"><label>업종 *</label>
+          <select id="ptm-cat" style="width:100%;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--card)">
+            <option value="">업종 선택</option>${catOpts}
+          </select>
+        </div>
+        <div class="ig"><label>할인 내용 *</label><input type="text" id="ptm-discount" placeholder="예: 전 메뉴 10% 할인 / 음료 1+1"/></div>
+        <div class="ig"><label>전화번호</label><input type="tel" id="ptm-phone" placeholder="예: 041-123-4567"/></div>
+        <div class="ig"><label>주소</label><input type="text" id="ptm-address" placeholder="예: 충남 홍성군 ..."/></div>
+        <div class="ig"><label>카카오맵 링크</label><input type="url" id="ptm-mapurl" placeholder="https://place.map.kakao.com/..."/></div>
+        <div class="ig"><label>메모·안내사항</label><textarea id="ptm-memo" rows="2" style="width:100%;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;font-size:14px;resize:vertical;font-family:inherit;background:var(--card)" placeholder="추가 안내사항 (선택)"></textarea></div>
+        <button class="btn btn-p" id="ptm-submit" style="background:#185FA5"><i class="ti ti-send"></i> 등록 신청</button>
+      </div>
+    </div>
+
+    ${list.length===0?`<div class="em"><i class="ti ti-building-store"></i><p>등록된 제휴업체가 없습니다</p></div>`:''}
     ${cats.map(k=>{
       const items=byCat[k];
       if(!items||items.length===0) return '';
@@ -1650,7 +1993,10 @@ async function pgPartners(){
           <div style="padding:14px 16px">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
               <div style="flex:1">
-                <div style="font-size:14px;font-weight:700;margin-bottom:4px">${p.name||''}</div>
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                  <span style="font-size:14px;font-weight:700">${p.name||''}</span>
+                  ${p.submittedBy?`<span style="font-size:10px;background:#E6F1FB;color:#185FA5;padding:1px 5px;border-radius:4px">조합원제보</span>`:''}
+                </div>
                 <div style="display:inline-block;background:${pc.color}22;color:${pc.color};font-size:11px;padding:2px 7px;border-radius:10px;font-weight:600;margin-bottom:6px">${pc.label}</div>
                 <div style="font-size:13px;color:#27500A;font-weight:600;margin-bottom:4px"><i class="ti ti-tag" style="font-size:12px"></i> ${p.discount||''}</div>
                 ${p.address?`<div style="font-size:12px;color:var(--text2);margin-bottom:2px"><i class="ti ti-map-pin" style="font-size:11px"></i> ${p.address}</div>`:''}
@@ -1670,10 +2016,51 @@ async function pgPartners(){
   </div>`;
 }
 function bPartners(){
+  // 폼 토글
+  document.getElementById('pt-form-toggle')?.addEventListener('click',()=>{
+    const form=document.getElementById('pt-member-form');
+    const chev=document.getElementById('pt-chevron');
+    const open=form.style.display==='none';
+    form.style.display=open?'block':'none';
+    chev.className='ti '+(open?'ti-chevron-up':'ti-chevron-down');
+  });
+  // 조합원 등록 신청
+  document.getElementById('ptm-submit')?.addEventListener('click',async()=>{
+    const name=document.getElementById('ptm-name').value.trim();
+    const category=document.getElementById('ptm-cat').value;
+    const discount=document.getElementById('ptm-discount').value.trim();
+    const phone=document.getElementById('ptm-phone').value.trim();
+    const address=document.getElementById('ptm-address').value.trim();
+    const mapUrl=document.getElementById('ptm-mapurl').value.trim();
+    const memo=document.getElementById('ptm-memo').value.trim();
+    if(!name) return showToast('업체명을 입력하세요','err');
+    if(!category) return showToast('업종을 선택하세요','err');
+    if(!discount) return showToast('할인 내용을 입력하세요','err');
+    const btn=document.getElementById('ptm-submit');
+    btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2 spin"></i> 신청 중...';
+    try{
+      await addPartner({name,category,discount,phone,address,mapUrl,memo,
+        submittedBy:CM?.name||'',submittedUid:CU.uid,pendingReview:true});
+      notify('제휴업체 등록 신청',`${CM?.name}님이 업체를 제보했습니다.\n업체명: ${name}\n할인: ${discount}`,CM?.name||'',CM?.phone||'');
+      showToast('등록 신청이 완료됐습니다. 관리자 검토 후 게시됩니다.');
+      document.getElementById('pt-member-form').style.display='none';
+      document.getElementById('ptm-name').value='';
+      document.getElementById('ptm-discount').value='';
+      document.getElementById('ptm-phone').value='';
+      document.getElementById('ptm-address').value='';
+      document.getElementById('ptm-mapurl').value='';
+      document.getElementById('ptm-memo').value='';
+      document.getElementById('ptm-cat').value='';
+      btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> 등록 신청';
+    }catch(e){
+      showToast('오류: '+e.message,'err');
+      btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> 등록 신청';
+    }
+  });
+  // 카드 탭 — 메모 펼치기
   document.querySelectorAll('.partner-card').forEach(card=>{
     card.addEventListener('click',()=>{
-      const pid=card.dataset.pid;
-      const memo=document.getElementById('pm-'+pid);
+      const memo=document.getElementById('pm-'+card.dataset.pid);
       if(memo) memo.style.display=memo.style.display==='none'?'block':'none';
     });
   });
@@ -1682,6 +2069,8 @@ function bPartners(){
 // ══ 관리자 제휴업체 관리 (대시보드 하위 페이지) ══
 async function pgAPartners(){
   const list=await getPartners();
+  const pending=list.filter(p=>p.pendingReview);
+  const approved=list.filter(p=>!p.pendingReview);
   const catOpts=Object.entries(PCAT).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
   return `<div class="hdr">
     <div style="display:flex;align-items:center;gap:8px">
@@ -1707,9 +2096,33 @@ async function pgAPartners(){
         <button class="btn btn-p" id="pt-submit"><i class="ti ti-plus"></i> 업체 등록</button>
       </div>
     </div>
-    <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:8px">등록된 업체 (${list.length}건)</div>
-    ${list.length===0?`<div class="em"><i class="ti ti-building-store"></i><p>등록된 업체가 없습니다</p></div>`:''}
-    ${list.map(p=>{
+    <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:8px">
+      ${pending.length?`<span style="color:#A32D2D">검토 대기 ${pending.length}건 · </span>`:''}등록 업체 ${approved.length}건
+    </div>
+    ${pending.length?`
+    <div style="font-size:12px;font-weight:700;color:#A32D2D;margin-bottom:6px"><i class="ti ti-clock"></i> 조합원 제보 — 검토 대기</div>
+    ${pending.map(p=>{
+      const pc=PCAT[p.category]||PCAT.etc;
+      return `<div class="card" style="margin-bottom:8px;border-color:#FCEBEB">
+        <div style="padding:12px 16px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700;margin-bottom:3px">${p.name||''} <span style="font-size:10px;color:#185FA5">제보: ${p.submittedBy||''}</span></div>
+              <div style="font-size:11px;color:${pc.color};font-weight:600;margin-bottom:3px">${pc.label}</div>
+              <div style="font-size:12px;color:#27500A">${p.discount||''}</div>
+              ${p.address?`<div style="font-size:11px;color:var(--text2);margin-top:2px">${p.address}</div>`:''}
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+              <button class="btn-sm pt-approve-btn" data-ptid="${p.id}" style="background:#004A2F;color:#fff;border-color:#004A2F"><i class="ti ti-check"></i> 승인</button>
+              <button class="btn-sm pt-del-btn" data-ptid="${p.id}" style="background:#e74c3c;color:#fff"><i class="ti ti-trash"></i> 삭제</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+    <div style="font-size:12px;font-weight:700;color:var(--text2);margin:10px 0 6px"><i class="ti ti-check"></i> 게시 중인 업체</div>`:''}
+    ${approved.length===0&&pending.length===0?`<div class="em"><i class="ti ti-building-store"></i><p>등록된 업체가 없습니다</p></div>`:''}
+    ${approved.map(p=>{
       const pc=PCAT[p.category]||PCAT.etc;
       return `<div class="card" style="margin-bottom:8px">
         <div style="padding:12px 16px">
@@ -1751,6 +2164,13 @@ function bAPartners(){
       btn.disabled=false;btn.innerHTML='<i class="ti ti-plus"></i> 업체 등록';
     }
   });
+  document.querySelectorAll('.pt-approve-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+    try{
+      await updatePartner(btn.dataset.ptid,{pendingReview:false});
+      showToast('게시 승인됐습니다');
+      setTimeout(()=>go('admin-partners'),600);
+    }catch(e){showToast('오류: '+e.message,'err');}
+  }));
   document.querySelectorAll('.pt-del-btn').forEach(btn=>btn.addEventListener('click',async()=>{
     if(!confirm('이 업체를 삭제하시겠습니까?')) return;
     try{
