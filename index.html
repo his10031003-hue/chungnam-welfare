@@ -17,7 +17,6 @@
   <link rel="apple-touch-icon" href="icon-192.png"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css"/>
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root{--green:#004A2F;--text:#1a1a1a;--text2:#6b6b6b;--border:rgba(0,0,0,0.1);--bg:#f4f4f0;--bg2:#f4f4f0;--card:#fff;--r:12px}
     *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -641,9 +640,20 @@ function bWelfare(){
 
     document.getElementById('scan-loading').style.display='block';
     document.getElementById('scan-result').style.display='none';
-    document.getElementById('scan-loading').querySelector('div').textContent='영수증 텍스트 인식 중... (10~20초)';
+    const loadingTxt=document.getElementById('scan-loading').querySelector('div');
+    if(loadingTxt) loadingTxt.textContent='OCR 라이브러리 로딩 중...';
 
     try{
+      // Tesseract 동적 로드 (필요할 때만)
+      if(!window.Tesseract){
+        await new Promise((res,rej)=>{
+          const s=document.createElement('script');
+          s.src='https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js';
+          s.onload=res; s.onerror=()=>rej(new Error('OCR 라이브러리 로드 실패. 인터넷 연결을 확인하세요.'));
+          document.head.appendChild(s);
+        });
+      }
+      if(loadingTxt) loadingTxt.textContent='영수증 텍스트 인식 중... (10~20초)';
       // Tesseract OCR (한국어+영어)
       const result=await window.Tesseract.recognize(file,'kor+eng',{
         logger:m=>{
