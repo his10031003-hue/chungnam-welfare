@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>연결 테스트</title>
+<style>
+body{margin:0;background:#004A2F;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif}
+.box{background:#fff;border-radius:12px;padding:24px;max-width:340px;width:90%;text-align:center}
+.ok{color:#004A2F;font-weight:700}
+.err{color:#A32D2D;font-weight:700}
+pre{font-size:11px;text-align:left;background:#f5f5f5;padding:10px;border-radius:6px;overflow-x:auto;word-break:break-all;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div class="box">
+  <div id="status">⏳ Firebase 연결 테스트 중...</div>
+  <pre id="log"></pre>
+</div>
+<script type="module">
+const log = (msg) => {
+  document.getElementById('log').textContent += msg + '\n';
+};
+const setStatus = (msg, ok) => {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = ok ? 'ok' : 'err';
+};
+
+log('1. Firebase import 시작...');
+try {
+  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+  log('2. firebase-app OK');
+  
+  const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+  log('3. firebase-auth OK');
+
+  const app = initializeApp({
+    apiKey: "AIzaSyA3Jjay-mXwVOfKGjdb-3J7bb-bzHXkeog",
+    authDomain: "project-f66bab52-d33b-4b61-b74.firebaseapp.com",
+    projectId: "project-f66bab52-d33b-4b61-b74",
+    storageBucket: "project-f66bab52-d33b-4b61-b74.firebasestorage.app",
+    messagingSenderId: "1085047850730",
+    appId: "1:1085047850730:web:8dc93225f1775bb0917993"
+  });
+  log('4. initializeApp OK');
+
+  const auth = getAuth(app);
+  log('5. getAuth OK');
+
+  onAuthStateChanged(auth, user => {
+    if(user) {
+      log('6. 로그인 상태: ' + user.uid);
+      setStatus('✅ Firebase 연결 성공! 로그인 상태', true);
+    } else {
+      log('6. 비로그인 상태 (정상)');
+      setStatus('✅ Firebase 연결 성공! 로그인 화면 표시됨', true);
+    }
+  });
+
+} catch(e) {
+  log('❌ 오류: ' + e.message);
+  log('스택: ' + e.stack);
+  setStatus('❌ 연결 실패: ' + e.message, false);
+}
+</script>
+</body>
+</html>
