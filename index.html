@@ -462,38 +462,6 @@ async function pgHome(){
     </div>`:''}
   </div>`;
 }
-  const dues=CM?.dues||0,rate=CM?.chargeRate??90;
-  const charge=calcCharge(dues,rate);
-  // 전체 복지비 통합 (카테고리 구분 없이)
-  const totalCharge=lim?.totalCharge||lim?.chargeAmount||charge;
-  const usedAmts=lim?.usedAmounts||{};
-  const totalUsed=Object.values(usedAmts).reduce((s,v)=>s+v,0);
-  // 상조회비 사용액도 차감
-  const sanjoUsed=lim?.sanjoUsed||0;
-  const totalAllUsed=totalUsed+sanjoUsed;
-  const remain=Math.max(0,totalCharge-totalAllUsed);
-  const pct=totalCharge>0?Math.round(totalAllUsed/totalCharge*100):0;
-
-  // 사용 내역 카드
-  const usedRows=CK.filter(k=>(usedAmts[k]||0)>0).map(k=>{
-    const c=CATS[k];
-    return `<div class="lr" style="padding:8px 16px">
-      <div class="ic" style="width:28px;height:28px;background:#f0f0ec;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <i class="ti ${c.icon}" style="color:${c.color};font-size:13px"></i>
-      </div>
-      <div class="inf"><div class="nm" style="font-size:12px">${c.label}</div></div>
-      <div class="am mn" style="font-size:12px">-${fmtW(usedAmts[k])}</div>
-    </div>`;
-  }).join('');
-  const sanjoRow=sanjoUsed>0?`<div class="lr" style="padding:8px 16px">
-    <div class="ic" style="width:28px;height:28px;background:#FCEBEB;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-      <i class="ti ti-heart" style="color:#A32D2D;font-size:13px"></i>
-    </div>
-    <div class="inf"><div class="nm" style="font-size:12px">상조회비</div></div>
-    <div class="am mn" style="font-size:12px">-${fmtW(sanjoUsed)}</div>
-  </div>`:'';
-
-// ══ 복지비 신청 ══
 async function pgWelfare(){
   const ym=thisYm();
   const [lim,reqs]=await Promise.all([getLimit(CU.uid,ym),getMyWReqs(CU.uid)]);
