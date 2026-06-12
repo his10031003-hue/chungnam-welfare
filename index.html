@@ -172,10 +172,10 @@ const CATS={
 const CK=Object.keys(CATS);
 
 // DB 함수
-const getMember=async uid=>{const s=await getDoc(doc(db,'members',uid));return s.exists()?{id:s.id,...s.data()}:null};
-const getMembers=async()=>{const s=await getDocs(collection(db,'members'));return s.docs.map(d=>({id:d.id,...d.data()}))};
+const getMember=async uid=>{try{const s=await getDoc(doc(db,'members',uid));return s.exists()?{id:s.id,...s.data()}:null}catch(e){console.warn('getMember',e);return null}};
+const getMembers=async()=>{try{const s=await getDocs(collection(db,'members'));return s.docs.map(d=>({id:d.id,...d.data()}))}catch(e){console.warn('getMembers',e);return[]}};
 const saveMember=(uid,data)=>setDoc(doc(db,'members',uid),{...data,updatedAt:serverTimestamp()},{merge:true});
-const getLimit=async(uid,ym)=>{const s=await getDoc(doc(db,'limits',`${uid}_${ym}`));return s.exists()?s.data():null};
+const getLimit=async(uid,ym)=>{try{const s=await getDoc(doc(db,'limits',`${uid}_${ym}`));return s.exists()?s.data():null}catch(e){console.warn('getLimit',e);return null}};
 const saveLimit=(uid,ym,data)=>setDoc(doc(db,'limits',`${uid}_${ym}`),{uid,ym,...data,updatedAt:serverTimestamp()},{merge:true});
 const getAllLimits=async ym=>{try{const s=await getDocs(query(collection(db,'limits'),where('ym','==',ym)));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
 const addWReq=data=>addDoc(collection(db,'welfare_requests'),{...data,status:'pending',createdAt:serverTimestamp()});
@@ -336,7 +336,11 @@ function bindPg(pid){
 async function pgHome(){
   const ym=thisYm();
   const pym=prevYm();
-  const [lim,limPrev,settings]=await Promise.all([getLimit(CU.uid,ym),getLimit(CU.uid,pym),getSettings()]);
+  let lim=null,limPrev=null,settings={};
+  try{
+    [lim,limPrev,settings]=await Promise.all([getLimit(CU.uid,ym),getLimit(CU.uid,pym),getSettings()]);
+  }catch(e){console.warn('pgHome data load',e);}
+  settings=settings||{};
   const dues=CM?.dues||0,rate=CM?.chargeRate??90;
   const charge=calcCharge(dues,rate);
   const totalCharge=lim?.totalCharge||lim?.chargeAmount||charge;
@@ -2441,10 +2445,27 @@ function renderLogin(){
 window.go=go;
 appEl.innerHTML=`<div class="lw"><i class="ti ti-loader-2 spin" style="font-size:40px;color:#fff"></i></div>`;
 onAuthStateChanged(auth,async user=>{
-  if(!user){renderLogin();return;}
-  CU=user;CM=await getMember(user.uid);
-  if(!CM){showToast('회원 정보를 찾을 수 없습니다','err');await signOut(auth);return;}
-  go(['admin','sub_admin','finance'].includes(CM.role)?'admin-dash':'home');
+  try{
+    if(!user){renderLogin();return;}
+    CU=user;
+    CM=await getMember(user.uid);
+    if(!CM){
+      // Firebase 연결은 됐지만 회원 정보 없음 → 로그인 화면으로
+      showToast('회원 정보를 찾을 수 없습니다','err');
+      await signOut(auth);
+      return;
+    }
+    go(['admin','sub_admin','finance'].includes(CM.role)?'admin-dash':'home');
+  }catch(e){
+    console.error('초기화 오류:',e);
+    // Firebase 연결 자체 실패 → 오류 메시지 표시
+    appEl.innerHTML=`<div class="lw"><div style="background:#fff;border-radius:12px;padding:24px;max-width:320px;text-align:center">
+      <i class="ti ti-wifi-off" style="font-size:40px;color:#A32D2D;display:block;margin-bottom:12px"></i>
+      <div style="font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:8px">연결 오류</div>
+      <div style="font-size:13px;color:#6b6b6b;margin-bottom:16px">${e.message||'서버에 연결할 수 없습니다'}</div>
+      <button onclick="location.reload()" style="background:#004A2F;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer">다시 시도</button>
+    </div></div>`;
+  }
 });
 </script>
 </body>
