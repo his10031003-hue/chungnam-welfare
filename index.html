@@ -1083,11 +1083,13 @@ async function pgADash(){
       <button class="btn btn-p" onclick="go('admin-charge')"><i class="ti ti-bolt"></i> 충전 관리</button>
       <button class="btn btn-s" onclick="go('admin-approve')"><i class="ti ti-check"></i> 승인 처리</button>
     </div>
-    <div style="margin-top:8px">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+      <button class="btn btn-s" onclick="go('admin-notice')" style="width:100%;background:#854F0B;color:#fff"><i class="ti ti-speakerphone"></i> 공지사항</button>
       <button class="btn btn-s" onclick="go('admin-partners')" style="width:100%;background:#185FA5;color:#fff"><i class="ti ti-building-store"></i> 제휴업체 관리</button>
-    </div>
-    <div style="margin-top:8px">
+      <button class="btn btn-s" onclick="go('admin-members')" style="width:100%;background:#0F6E56;color:#fff"><i class="ti ti-users"></i> 조합원 관리</button>
+      <button class="btn btn-s" onclick="recalcAll()" style="width:100%;background:#BA7517;color:#fff" id="recalc-btn"><i class="ti ti-refresh"></i> 전체 잔액 재계산</button>
       <button class="btn btn-s" onclick="go('admin-settings')" style="width:100%;background:#534AB7;color:#fff"><i class="ti ti-settings"></i> 조합 기본 설정</button>
+      <button class="btn btn-s" onclick="go('admin-approve').then(()=>{setTimeout(()=>{const el=document.querySelector('.sl');if(el)el.scrollIntoView({behavior:'smooth'})},300)})" style="width:100%;background:#A32D2D;color:#fff"><i class="ti ti-file-invoice"></i> 기부금영수증 승인</button>
     </div>
   </div>`;
 }
@@ -2408,6 +2410,35 @@ function renderLogin(){
 }
 
 // ══ 초기화 ══
+window.recalcAll=async function(){
+  if(!confirm('모든 조합원의 이달 잔액을 재계산합니다. 계속하시겠습니까?')) return;
+  const btn=document.getElementById('recalc-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2 spin"></i> 재계산 중...';}
+  try{
+    const ym=thisYm();
+    const members=await getMembers();
+    let count=0;
+    for(const m of members){
+      if(!m.dues||m.dues<=0) continue;
+      const dues=m.dues||0;
+      const rate=m.chargeRate??90;
+      const charge=calcCharge(dues,rate);
+      const limKey=`${m.id}_${ym}`;
+      const snap=await getDoc(doc(db,'limits',limKey));
+      if(snap.exists()){
+        const d=snap.data();
+        if(!d.totalCharge||d.totalCharge!==charge){
+          await setDoc(doc(db,'limits',limKey),{totalCharge:charge,updatedAt:serverTimestamp()},{merge:true});
+          count++;
+        }
+      }
+    }
+    showToast(`재계산 완료 (${count}명 업데이트)`);
+  }catch(e){showToast('오류: '+e.message,'err');}
+  finally{
+    if(btn){btn.disabled=false;btn.innerHTML='<i class="ti ti-refresh"></i> 전체 잔액 재계산';}
+  }
+};
 window.go=go;
 appEl.innerHTML=`<div class="lw"><i class="ti ti-loader-2 spin" style="font-size:40px;color:#fff"></i></div>`;
 onAuthStateChanged(auth,async user=>{
