@@ -104,6 +104,16 @@
     .job-btn.on{border-color:var(--green);background:#EAF3DE;color:var(--green)}
     @keyframes spin{to{transform:rotate(360deg)}}
     .spin{animation:spin 1s linear infinite}
+    /* 검색창 */
+    .srch-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--green);border-bottom:1px solid rgba(255,255,255,.15);flex-shrink:0}
+    .srch-bar input{flex:1;padding:8px 12px 8px 32px;border:none;border-radius:8px;background:rgba(255,255,255,.15);color:#fff;font-size:13px;font-family:inherit;outline:none}
+    .srch-bar input::placeholder{color:rgba(255,255,255,.5)}
+    .srch-bar input:focus{background:rgba(255,255,255,.22)}
+    .srch-wrap{position:relative;flex:1}
+    .srch-wrap i{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.6);font-size:14px;pointer-events:none}
+    .srch-clear{background:none;border:none;color:rgba(255,255,255,.6);font-size:18px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0}
+    .srch-count{font-size:11px;color:rgba(255,255,255,.55);white-space:nowrap;flex-shrink:0}
+    .hl{background:#FFD600;color:#1a1a1a;border-radius:2px;padding:0 1px}
   </style>
 </head>
 <body>
@@ -136,6 +146,54 @@ const calcCharge=(dues,rate)=>{
   if((dues||0)<10000) return 0;
   return Math.round((dues||0)*(rate??90)/100);
 };
+
+// ══ 공통 검색 유틸 ══
+function mkSearchBar(id, placeholder){
+  return `<div class="srch-bar">
+    <div class="srch-wrap">
+      <i class="ti ti-search"></i>
+      <input type="text" id="${id}" placeholder="${placeholder}" autocomplete="off" autocorrect="off" spellcheck="false"/>
+    </div>
+    <span class="srch-count" id="${id}-cnt"></span>
+    <button class="srch-clear" id="${id}-clr" title="지우기">×</button>
+  </div>`;
+}
+function hlText(text, kw){
+  if(!kw||!text) return String(text||'');
+  const esc=kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return String(text).replace(new RegExp(`(${esc})`,'gi'),'<span class="hl">$1</span>');
+}
+function bindSearch(inputId, containerSelector, searchFields){
+  const inp=document.getElementById(inputId);
+  const cntEl=document.getElementById(inputId+'-cnt');
+  const clrBtn=document.getElementById(inputId+'-clr');
+  if(!inp) return;
+  const doFilter=()=>{
+    const kw=inp.value.trim().toLowerCase();
+    const items=document.querySelectorAll(containerSelector);
+    let shown=0;
+    items.forEach(el=>{
+      const txt=(el.dataset.search||'').toLowerCase();
+      const match=!kw||txt.includes(kw);
+      el.style.display=match?'':'none';
+      if(match){
+        shown++;
+        if(kw){
+          el.querySelectorAll('.srch-hl[data-raw]').forEach(span=>{
+            span.innerHTML=hlText(span.dataset.raw,kw);
+          });
+        } else {
+          el.querySelectorAll('.srch-hl[data-raw]').forEach(span=>{
+            span.textContent=span.dataset.raw;
+          });
+        }
+      }
+    });
+    if(cntEl) cntEl.textContent=kw?`${shown}건`:'';
+  };
+  inp.addEventListener('input',doFilter);
+  if(clrBtn) clrBtn.addEventListener('click',()=>{inp.value='';doFilter();inp.focus();});
+}
 
 function showToast(msg,type=''){
   const t=document.createElement('div');
@@ -201,6 +259,17 @@ const addDuesReq=data=>addDoc(collection(db,'dues_requests'),{...data,status:'pe
 const getMyDuesReqs=async uid=>{try{const s=await getDocs(query(collection(db,'dues_requests'),where('uid','==',uid),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
 const getAllDuesReqs=async()=>{try{const s=await getDocs(query(collection(db,'dues_requests'),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
 const updateDuesReq=(id,data)=>updateDoc(doc(db,'dues_requests',id),{...data,updatedAt:serverTimestamp()});
+// 문의·건의사항
+const addInquiry=data=>addDoc(collection(db,'inquiries'),{...data,status:'pending',createdAt:serverTimestamp()});
+const getMyInquiries=async uid=>{try{const s=await getDocs(query(collection(db,'inquiries'),where('uid','==',uid),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const getAllInquiries=async()=>{try{const s=await getDocs(query(collection(db,'inquiries'),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const updateInquiry=(id,data)=>updateDoc(doc(db,'inquiries',id),{...data,updatedAt:serverTimestamp()});
+// 애경사 공지
+const addLifeEvent=data=>addDoc(collection(db,'life_events'),{...data,status:'pending',createdAt:serverTimestamp()});
+const getLifeEvents=async()=>{try{const s=await getDocs(query(collection(db,'life_events'),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const getMyLifeEvents=async uid=>{try{const s=await getDocs(query(collection(db,'life_events'),where('uid','==',uid),orderBy('createdAt','desc')));return s.docs.map(d=>({id:d.id,...d.data()}))}catch{return[]}};
+const updateLifeEvent=(id,data)=>updateDoc(doc(db,'life_events',id),{...data,updatedAt:serverTimestamp()});
+const deleteLifeEvent=id=>deleteDoc(doc(db,'life_events',id));
 
 let CU=null,CM=null;
 const stL=s=>({pending:'대기중',approved:'승인',rejected:'반려',paid:'지급완료',active:'활성',inactive:'정지',withdraw:'탈퇴신청'}[s]||s);
@@ -239,6 +308,8 @@ async function go(pid){
       case 'welfare':html=await pgWelfare();break;
       case 'sanjo':html=await pgSanjo();break;
       case 'myinfo':html=pgMyInfo();break;
+      case 'inquiry':html=await pgInquiry();break;
+      case 'life-events':html=await pgLifeEvents();break;
       case 'admin-dash':html=await pgADash();break;
       case 'admin-dues-status':html=await pgADuesStatus();break;
       case 'admin-members':html=await pgAMembers();break;
@@ -252,6 +323,8 @@ async function go(pid){
       case 'admin-settings':html=await pgASettings();break;
       case 'notice':html=await pgNotice();break;
       case 'admin-myinfo':html=pgAdminMyInfo();break;
+      case 'admin-inquiry':html=await pgAInquiry();break;
+      case 'admin-life-events':html=await pgALifeEvents();break;
       default:html=`<div class="pg"><div class="em"><i class="ti ti-error-404"></i><p>없는 페이지</p></div></div>`;
     }
   }catch(e){console.error(e);html=`<div class="pg"><div class="em"><i class="ti ti-alert-circle"></i><p>오류: ${e.message}</p></div></div>`;}
@@ -266,6 +339,8 @@ function bindPg(pid){
     case 'membercard':bMemberCard();break;
     case 'sanjo':bSanjo();break;
     case 'myinfo':bMyInfo();break;
+    case 'inquiry':bInquiry();break;
+    case 'life-events':bLifeEvents();break;
     case 'admin-members':bAMembers();break;
     case 'admin-charge':bACharge();break;
     case 'admin-approve':bAApprove();break;
@@ -275,6 +350,8 @@ function bindPg(pid){
     case 'admin-settings':bASettings();break;
     case 'notice':bNotice();break;
     case 'admin-notice':bANotice();break;
+    case 'admin-inquiry':bAInquiry();break;
+    case 'admin-life-events':bALifeEvents();break;
     case 'admin-myinfo':
       document.getElementById('admin-logout-btn')?.addEventListener('click',()=>signOut(auth));
       document.getElementById('ai-save')?.addEventListener('click',async()=>{
@@ -428,6 +505,10 @@ async function pgHome(){
         <i class="ti ti-speakerphone" style="font-size:22px;color:#854F0B;display:block;margin-bottom:5px"></i>
         <div style="font-size:11px;font-weight:600;color:var(--text)">공지사항</div>
       </div>
+      <div onclick="go('life-events')" style="background:linear-gradient(135deg,#185FA5,#A32D2D);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
+        <i class="ti ti-calendar-heart" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:11px;font-weight:600;color:#fff">애경사 공지</div>
+      </div>
       <div onclick="go('partners')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
         <i class="ti ti-building-store" style="font-size:22px;color:#185FA5;display:block;margin-bottom:5px"></i>
         <div style="font-size:11px;font-weight:600;color:var(--text)">제휴업체</div>
@@ -439,6 +520,10 @@ async function pgHome(){
       <div onclick="go('myinfo')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
         <i class="ti ti-user" style="font-size:22px;color:#0F6E56;display:block;margin-bottom:5px"></i>
         <div style="font-size:11px;font-weight:600;color:var(--text)">내 정보</div>
+      </div>
+      <div onclick="go('inquiry')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
+        <i class="ti ti-message-circle" style="font-size:22px;color:#534AB7;display:block;margin-bottom:5px"></i>
+        <div style="font-size:11px;font-weight:600;color:var(--text)">문의·건의</div>
       </div>
     </div>
 
@@ -460,6 +545,20 @@ async function pgHome(){
         ${settings.unionMemo?`<div style="font-size:12px;color:var(--text2);margin-top:8px;line-height:1.5">${settings.unionMemo}</div>`:''}
       </div>
     </div>`:''}
+
+    <!-- 기부금영수증 + 문의/건의 바로가기 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div onclick="go('myinfo')" style="background:linear-gradient(135deg,#3730A3,#534AB7);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
+        <i class="ti ti-file-invoice" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:11px;font-weight:600;color:#fff">기부금영수증</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px">내 정보에서 신청</div>
+      </div>
+      <div onclick="go('life-events')" style="background:linear-gradient(135deg,#185FA5,#A32D2D);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
+        <i class="ti ti-calendar-heart" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:11px;font-weight:600;color:#fff">애경사 공지</div>
+        <div style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px">경조사 소식 보기·등록</div>
+      </div>
+    </div>
   </div>`;
 }
 async function pgWelfare(){
@@ -1085,6 +1184,8 @@ async function pgADash(){
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
       <button class="btn btn-s" onclick="go('admin-notice')" style="width:100%;background:#854F0B;color:#fff"><i class="ti ti-speakerphone"></i> 공지사항</button>
+      <button class="btn btn-s" onclick="go('admin-life-events')" style="width:100%;background:linear-gradient(90deg,#185FA5,#A32D2D);color:#fff"><i class="ti ti-calendar-heart"></i> 애경사 공지 관리</button>
+      <button class="btn btn-s" onclick="go('admin-inquiry')" style="width:100%;background:#534AB7;color:#fff"><i class="ti ti-message-circle"></i> 문의·건의 관리</button>
       <button class="btn btn-s" onclick="go('admin-partners')" style="width:100%;background:#185FA5;color:#fff"><i class="ti ti-building-store"></i> 제휴업체 관리</button>
       <button class="btn btn-s" onclick="go('admin-members')" style="width:100%;background:#0F6E56;color:#fff"><i class="ti ti-users"></i> 조합원 관리</button>
       <button class="btn btn-s" onclick="recalcAll()" style="width:100%;background:#BA7517;color:#fff" id="recalc-btn"><i class="ti ti-refresh"></i> 전체 잔액 재계산</button>
@@ -1154,12 +1255,12 @@ async function pgAMembers(){
   const pending=allM.filter(m=>m.status==='pending');
   const active=allM.filter(m=>m.status==='active');
   const withdraw=allM.filter(m=>m.status==='withdraw');
-  const mkRow=m=>`<div class="lr" style="cursor:pointer" onclick="document.querySelector('.edit-btn[data-uid=\\"${m.id}\\"]').click()">
+  const mkRow=m=>`<div class="lr mem-row" data-search="${(m.name||'').replace(/\"/g,'')} ${(m.phone||'').replace(/\"/g,'')} ${(m.dept||'').replace(/\"/g,'')}" style="cursor:pointer" onclick="document.querySelector('.edit-btn[data-uid=\\\"${m.id}\\\"]').click()">
     <div class="ic icb" style="font-size:13px;font-weight:700;flex-shrink:0">${(m.name||'?')[0]}</div>
     <div class="inf">
-      <div class="nm">${m.name||''} <span class="bdg ${stC(m.status||'active')}" style="margin-left:4px">${stL(m.status||'active')}</span> <span class="bdg ${roleC(m.role)}" style="margin-left:2px">${roleL(m.role)}</span></div>
+      <div class="nm"><span class="srch-hl" data-raw="${(m.name||'').replace(/\"/g,'&quot;')}">${m.name||''}</span> <span class="bdg ${stC(m.status||'active')}" style="margin-left:4px">${stL(m.status||'active')}</span> <span class="bdg ${roleC(m.role)}" style="margin-left:2px">${roleL(m.role)}</span></div>
       <div class="sb">${m.jobType==='전직'?'전직(사무총국)':m.jobType==='현직'?`현직(${m.dept||''})`:m.dept||''} · 조합비 ${fmtW(m.dues||0)}</div>
-      <div class="sb">${m.phone||''}</div>
+      <div class="sb"><span class="srch-hl" data-raw="${(m.phone||'').replace(/\"/g,'&quot;')}">${m.phone||''}</span></div>
     </div>
     <button class="btn-sm edit-btn" data-uid="${m.id}" style="flex-shrink:0"><i class="ti ti-edit"></i></button>
   </div>`;
@@ -1169,11 +1270,12 @@ async function pgAMembers(){
       <button class="btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px" id="add-btn"><i class="ti ti-plus"></i> 조합원 추가</button>
     </div>
   </div>
+  ${mkSearchBar('mem-srch','이름·전화번호·부서 검색...')}
   <div class="pg">
-    ${pending.length?`<div class="sl">가입 대기 (${pending.length}명)</div><div class="card">${pending.map(mkRow).join('')}</div>`:''}
-    ${withdraw.length?`<div class="sl">탈퇴 신청 (${withdraw.length}명)</div><div class="card">${withdraw.map(mkRow).join('')}</div>`:''}
+    ${pending.length?`<div class="sl">가입 대기 (${pending.length}명)</div><div class="card" id="mem-pending-list">${pending.map(mkRow).join('')}</div>`:''}
+    ${withdraw.length?`<div class="sl">탈퇴 신청 (${withdraw.length}명)</div><div class="card" id="mem-withdraw-list">${withdraw.map(mkRow).join('')}</div>`:''}
     <div class="sl">활성 조합원 (${active.length}명)</div>
-    <div class="card">${active.length?active.map(mkRow).join(''):'<div class="em" style="padding:20px"><i class="ti ti-users-off"></i><p>활성 조합원 없음</p></div>'}</div>
+    <div class="card" id="mem-active-list">${active.length?active.map(mkRow).join(''):'<div class="em" style="padding:20px"><i class="ti ti-users-off"></i><p>활성 조합원 없음</p></div>'}</div>
   </div>
   <div class="mo hd" id="mem-modal">
     <div class="mb">
@@ -1230,6 +1332,7 @@ window.pickJob=function(t){
 };
 
 function bAMembers(){
+  bindSearch('mem-srch','.mem-row','');
   const open=uid=>{
     const m=uid?allM.find(x=>x.id===uid):null;
     document.getElementById('m-title').textContent=uid?'회원 수정':'회원 추가';
@@ -1707,6 +1810,7 @@ function bACatReq(){
 }
 
 function bNotice(){
+  bindSearch('notice-srch','.nc-row','');
   // 클릭 시 내용 펼치기/접기
   document.querySelectorAll('.notice-item').forEach(card=>{
     card.addEventListener('click',()=>{
@@ -1719,6 +1823,7 @@ function bNotice(){
 }
 
 function bANotice(){
+  bindSearch('anc-srch','.anc-row','');
   // 공지 등록
   document.getElementById('nc-submit')?.addEventListener('click',async()=>{
     const title=document.getElementById('nc-title').value.trim();
@@ -1752,6 +1857,363 @@ function bANotice(){
       showToast('삭제됐습니다');
       setTimeout(()=>go('admin-notice'),600);
     }catch(e){showToast('오류: '+e.message,'err');}
+  }));
+}
+
+
+// ══ 문의·건의사항 (조합원) ══
+async function pgInquiry(){
+  const myList=await getMyInquiries(CU.uid);
+  const typeLabel=t=>({general:'일반문의',welfare:'복지관련',dues:'조합비관련',suggestion:'건의사항',etc:'기타'}[t]||t);
+  const rows=myList.length?myList.map(r=>`<div class="lr iq-row" data-search="${(r.title||'').replace(/"/g,'')} ${(r.content||'').replace(/"/g,'')}">
+    <div class="ic icp"><i class="ti ti-message-circle"></i></div>
+    <div class="inf">
+      <div class="nm">[${typeLabel(r.category)}] <span class="srch-hl" data-raw="${(r.title||'').replace(/"/g,'&quot;')}">${r.title||''}</span></div>
+      <div class="sb">${r.content?r.content.slice(0,40)+(r.content.length>40?'...':''):''}</div>
+      <span class="bdg ${stC(r.status)}" style="margin-top:3px">${stL(r.status)}</span>
+      ${r.reply?`<div style="margin-top:5px;padding:7px 10px;background:#EAF3DE;border-radius:6px;font-size:11px;color:#27500A"><i class="ti ti-corner-down-right" style="font-size:11px"></i> <strong>답변:</strong> ${r.reply}</div>`:''}
+    </div>
+  </div>`).join(''):`<div class="em" style="padding:20px"><i class="ti ti-message-off"></i><p>문의 내역이 없습니다</p></div>`;
+
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="go('home')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 홈</button>
+      <div><h2>문의·건의사항</h2><p>조합에 의견을 보내주세요</p></div>
+    </div>
+  </div>
+  ${mkSearchBar('iq-srch','제목·내용 검색...')}
+  <div class="pg">
+    <div class="card" style="padding:14px 16px;margin-bottom:12px">
+      <div class="ch" style="padding:0 0 10px 0;border-bottom:.5px solid var(--border);margin-bottom:12px">
+        <i class="ti ti-pencil" style="color:#534AB7"></i><span>문의·건의 작성</span>
+      </div>
+      <div class="ig">
+        <label>구분</label>
+        <select id="iq-cat">
+          <option value="general">일반문의</option>
+          <option value="welfare">복지 관련</option>
+          <option value="dues">조합비 관련</option>
+          <option value="suggestion">건의사항</option>
+          <option value="etc">기타</option>
+        </select>
+      </div>
+      <div class="ig"><label>제목 *</label><input type="text" id="iq-title" placeholder="문의 제목을 입력하세요"/></div>
+      <div class="ig"><label>내용 *</label><textarea id="iq-content" rows="4" style="width:100%;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;font-size:14px;resize:vertical;font-family:inherit;background:var(--card)" placeholder="문의하실 내용을 자세히 입력해 주세요"></textarea></div>
+      <div class="ig">
+        <label>연락처 (답변 연락용, 선택)</label>
+        <input type="tel" id="iq-phone" value="${CM?.phone||''}" placeholder="010-0000-0000"/>
+      </div>
+      <button class="btn btn-p" id="iq-submit" style="background:#534AB7"><i class="ti ti-send"></i> 문의 보내기</button>
+    </div>
+    <div class="sl">내 문의 내역 (${myList.length}건)</div>
+    <div class="card">${rows}</div>
+  </div>`;
+}
+function bInquiry(){
+  bindSearch('iq-srch','.iq-row','');
+  document.getElementById('iq-submit')?.addEventListener('click',async()=>{
+    const category=document.getElementById('iq-cat').value;
+    const title=document.getElementById('iq-title').value.trim();
+    const content=document.getElementById('iq-content').value.trim();
+    const phone=document.getElementById('iq-phone').value.trim();
+    if(!title) return showToast('제목을 입력하세요','err');
+    if(!content) return showToast('내용을 입력하세요','err');
+    const btn=document.getElementById('iq-submit');btn.disabled=true;
+    btn.innerHTML='<i class="ti ti-loader-2 spin"></i> 전송 중...';
+    try{
+      await addInquiry({uid:CU.uid,memberName:CM?.name||'',phone:phone||CM?.phone||'',category,title,content});
+      notify('새 문의·건의사항',`[${category}] ${title}\n${content}\n보낸이: ${CM?.name}(${phone||CM?.phone||''})`,CM?.name||'',CM?.phone||'');
+      showToast('문의가 접수됐습니다. 답변을 기다려주세요.');
+      setTimeout(()=>go('inquiry'),700);
+    }catch(e){showToast('오류: '+e.message,'err');btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> 문의 보내기';}
+  });
+}
+
+// ══ 관리자 문의 관리 ══
+async function pgAInquiry(){
+  const list=await getAllInquiries();
+  const pending=list.filter(r=>r.status==='pending');
+  const answered=list.filter(r=>r.status!=='pending');
+  const typeLabel=t=>({general:'일반문의',welfare:'복지관련',dues:'조합비관련',suggestion:'건의사항',etc:'기타'}[t]||t);
+
+  const mkRow=r=>`<div class="card aiq-row" data-search="${(r.title||'').replace(/"/g,'')} ${(r.content||'').replace(/"/g,'')} ${(r.memberName||'').replace(/"/g,'')}" style="margin-bottom:8px">
+    <div style="padding:12px 16px">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span class="bdg bp">${typeLabel(r.category)}</span>
+            <span class="bdg ${stC(r.status)}">${stL(r.status)}</span>
+          </div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:2px"><span class="srch-hl" data-raw="${(r.title||'').replace(/"/g,'&quot;')}">${r.title||''}</span></div>
+          <div style="font-size:12px;color:var(--text2)">보낸이: <span class="srch-hl" data-raw="${(r.memberName||'').replace(/"/g,'&quot;')}">${r.memberName||''}</span> · ${r.phone||''}</div>
+          <div style="font-size:12px;color:var(--text);margin-top:5px;line-height:1.5;background:#f8f8f6;padding:8px 10px;border-radius:6px">${r.content||''}</div>
+          ${r.reply?`<div style="margin-top:6px;padding:8px 10px;background:#EAF3DE;border-radius:6px;font-size:12px;color:#27500A"><i class="ti ti-corner-down-right" style="font-size:11px"></i> <strong>답변:</strong> ${r.reply}</div>`:''}
+          ${r.status==='pending'?`<div style="margin-top:8px">
+            <textarea id="rp-${r.id}" rows="2" placeholder="답변을 입력하세요 (선택)" style="width:100%;padding:8px 10px;border:.5px solid var(--border);border-radius:6px;font-size:12px;resize:vertical;font-family:inherit;background:var(--card)"></textarea>
+            <div style="display:flex;gap:6px;margin-top:5px">
+              <button class="btn-sm iq-answer-btn" data-iid="${r.id}" style="background:#004A2F;color:#fff;border-color:#004A2F;flex:1"><i class="ti ti-check"></i> 확인 처리</button>
+              <button class="btn-sm iq-del-btn" data-iid="${r.id}" style="background:#FCEBEB;color:#791F1F"><i class="ti ti-trash"></i></button>
+            </div>
+          </div>`:`<button class="btn-sm iq-del-btn" data-iid="${r.id}" style="margin-top:6px;background:#f5f5f5;color:#555"><i class="ti ti-trash"></i> 삭제</button>`}
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="go('admin-dash')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 뒤로</button>
+      <div><h2>문의·건의 관리</h2><p>대기 ${pending.length}건 · 처리 ${answered.length}건</p></div>
+    </div>
+  </div>
+  ${mkSearchBar('aiq-srch','이름·제목·내용 검색...')}
+  <div class="pg">
+    ${pending.length?`<div class="sl" style="color:#A32D2D">답변 대기 (${pending.length}건)</div>${pending.map(r=>mkRow(r)).join('')}`:''}
+    ${answered.length?`<div class="sl">처리 완료 (${answered.length}건)</div>${answered.map(r=>mkRow(r)).join('')}`:''}
+    ${!list.length?`<div class="em"><i class="ti ti-message-off"></i><p>접수된 문의가 없습니다</p></div>`:''}
+  </div>`;
+}
+function bAInquiry(){
+  bindSearch('aiq-srch','.aiq-row','');
+  document.querySelectorAll('.iq-answer-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+    const reply=document.getElementById('rp-'+btn.dataset.iid)?.value.trim()||'';
+    try{
+      await updateInquiry(btn.dataset.iid,{status:'approved',reply});
+      showToast('처리됐습니다');
+      setTimeout(()=>go('admin-inquiry'),600);
+    }catch(e){showToast('오류: '+e.message,'err');}
+  }));
+  document.querySelectorAll('.iq-del-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+    if(!confirm('이 문의를 삭제하시겠습니까?')) return;
+    try{
+      await deleteDoc(doc(db,'inquiries',btn.dataset.iid));
+      showToast('삭제됐습니다');
+      setTimeout(()=>go('admin-inquiry'),600);
+    }catch(e){showToast('오류: '+e.message,'err');}
+  }));
+}
+
+// ══ 애경사 공지 (조합원) ══
+async function pgLifeEvents(){
+  const events=await getLifeEvents();
+  const approved=events.filter(e=>e.status==='approved');
+  const myPending=events.filter(e=>e.uid===CU.uid&&e.status==='pending');
+
+  const typeLabel=t=>({happy:'🎉 경사',sad:'🕯️ 애사',birth:'👶 출산',wedding:'💍 결혼',retire:'🎓 퇴직',other:'📌 기타'}[t]||t);
+  const typeColor=t=>({happy:'#185FA5',sad:'#6A1B9A',birth:'#E65100',wedding:'#AD1457',retire:'#2E7D32',other:'#555'}[t]||'#555');
+  const typeBg=t=>({happy:'#E6F1FB',sad:'#F5F0F8',birth:'#FFF3E0',wedding:'#FCE4EC',retire:'#E8F5E9',other:'#F3F3F3'}[t]||'#F3F3F3');
+
+  const mkCard=e=>`<div class="card" style="margin-bottom:8px;border-left:3px solid ${typeColor(e.eventType)}">
+    <div style="padding:14px 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:700;background:${typeBg(e.eventType)};color:${typeColor(e.eventType)};padding:3px 9px;border-radius:10px">${typeLabel(e.eventType)}</span>
+        <span style="font-size:11px;color:var(--text2)">${e.eventDate||''}</span>
+      </div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:3px">${e.memberName||''} 조합원</div>
+      <div style="font-size:13px;color:var(--text);margin-bottom:${e.note?'5px':'0'}">${e.title||''}</div>
+      ${e.place?`<div style="font-size:12px;color:var(--text2);margin-top:3px"><i class="ti ti-map-pin" style="font-size:11px"></i> ${e.place}</div>`:''}
+      ${e.note?`<div style="font-size:12px;color:var(--text2);line-height:1.5;margin-top:4px">${e.note}</div>`:''}
+      ${e.uid===CU.uid&&e.status==='pending'?`<span class="bdg ba" style="margin-top:6px;display:inline-block">승인 대기중</span>`:''}
+    </div>
+  </div>`;
+
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="go('home')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 홈</button>
+      <div><h2>애경사 공지</h2><p>조합원 경조사 소식</p></div>
+    </div>
+  </div>
+  ${mkSearchBar('le-srch','이름·제목·내용 검색...')}
+  <div class="pg">
+    <div class="card" style="margin-bottom:12px">
+      <div class="ch" id="le-form-toggle" style="cursor:pointer">
+        <i class="ti ti-calendar-plus" style="color:#185FA5"></i>
+        <span>애경사 등록하기</span>
+        <i class="ti ti-chevron-down" id="le-chevron" style="margin-left:auto;font-size:14px;color:var(--text2)"></i>
+      </div>
+      <div id="le-form" style="display:none;padding:14px 16px">
+        <div class="nt ntb" style="margin-bottom:10px"><i class="ti ti-info-circle"></i>
+          <p>경조사 소식을 등록하면 관리자 승인 후 조합원 전체에게 공개됩니다.</p>
+        </div>
+        <div style="margin-bottom:12px">
+          <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">구분 선택 *</label>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+            <div class="le-type-btn sel-btn" data-type="happy" onclick="lePickType(this)"><i class="ti ti-confetti" style="color:#185FA5"></i><div class="lb" style="font-size:11px">경사</div></div>
+            <div class="le-type-btn sel-btn" data-type="wedding" onclick="lePickType(this)"><i class="ti ti-rings-wedding" style="color:#AD1457"></i><div class="lb" style="font-size:11px">결혼</div></div>
+            <div class="le-type-btn sel-btn" data-type="birth" onclick="lePickType(this)"><i class="ti ti-baby-carriage" style="color:#E65100"></i><div class="lb" style="font-size:11px">출산</div></div>
+            <div class="le-type-btn sel-btn" data-type="retire" onclick="lePickType(this)"><i class="ti ti-award" style="color:#2E7D32"></i><div class="lb" style="font-size:11px">퇴직</div></div>
+            <div class="le-type-btn sel-btn" data-type="sad" onclick="lePickType(this)"><i class="ti ti-candle" style="color:#6A1B9A"></i><div class="lb" style="font-size:11px">애사</div></div>
+            <div class="le-type-btn sel-btn" data-type="other" onclick="lePickType(this)"><i class="ti ti-dots-circle-horizontal" style="color:#555"></i><div class="lb" style="font-size:11px">기타</div></div>
+          </div>
+          <input type="hidden" id="le-type"/>
+        </div>
+        <div class="ig"><label>제목 *</label><input type="text" id="le-title" placeholder="예: 장남 결혼식, 부친상 등"/></div>
+        <div class="ig"><label>날짜 *</label><input type="date" id="le-date"/></div>
+        <div class="ig"><label>장소 (선택)</label><input type="text" id="le-place" placeholder="예: 홍성 웨딩홀 2층"/></div>
+        <div class="ig"><label>내용 (선택)</label><textarea id="le-note" rows="3" style="width:100%;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;font-size:14px;resize:vertical;font-family:inherit;background:var(--card)" placeholder="추가 내용을 자유롭게 입력하세요"></textarea></div>
+        <button class="btn btn-p" id="le-submit" style="background:#185FA5"><i class="ti ti-send"></i> 등록 신청</button>
+      </div>
+    </div>
+    ${myPending.length?`<div class="nt nta"><i class="ti ti-clock"></i><p>내가 등록한 <strong>${myPending.length}건</strong>이 관리자 승인 대기 중입니다.</p></div>`:''}
+    ${approved.length?`<div class="sl">최근 애경사 소식 (${approved.length}건)</div>
+    <div id="le-list">
+    ${approved.map(e=>`<div class="le-row" data-search="${(e.memberName||'').replace(/"/g,'')} ${(e.title||'').replace(/"/g,'')} ${(e.note||'').replace(/"/g,'')} ${(e.place||'').replace(/"/g,'')} ${(e.eventType||'')}">${mkCard(e).replace('<div class="card"','<div class="card"')}</div>`).join('')}
+    </div>`:`<div class="em"><i class="ti ti-calendar-off"></i><p>등록된 애경사 소식이 없습니다</p></div>`}
+  </div>`;
+}
+window.lePickType=function(el){
+  document.querySelectorAll('.le-type-btn').forEach(b=>{b.className='le-type-btn sel-btn';});
+  el.className='le-type-btn sel-btn on-happy';
+  document.getElementById('le-type').value=el.dataset.type;
+};
+function bLifeEvents(){
+  bindSearch('le-srch','.le-row','');
+  document.getElementById('le-form-toggle')?.addEventListener('click',()=>{
+    const form=document.getElementById('le-form');
+    const chev=document.getElementById('le-chevron');
+    const open=form.style.display==='none';
+    form.style.display=open?'block':'none';
+    chev.className='ti '+(open?'ti-chevron-up':'ti-chevron-down');
+  });
+  document.getElementById('le-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('le-submit')?.addEventListener('click',async()=>{
+    const type=document.getElementById('le-type').value;
+    const title=document.getElementById('le-title').value.trim();
+    const date=document.getElementById('le-date').value;
+    const place=document.getElementById('le-place').value.trim();
+    const note=document.getElementById('le-note').value.trim();
+    if(!type) return showToast('구분을 선택하세요','err');
+    if(!title) return showToast('제목을 입력하세요','err');
+    if(!date) return showToast('날짜를 선택하세요','err');
+    const btn=document.getElementById('le-submit');btn.disabled=true;
+    btn.innerHTML='<i class="ti ti-loader-2 spin"></i> 신청 중...';
+    try{
+      await addLifeEvent({uid:CU.uid,memberName:CM?.name||'',phone:CM?.phone||'',dept:CM?.dept||'',eventType:type,title,eventDate:date,place,note});
+      notify('애경사 등록 신청',`${CM?.name}님\n구분: ${type}\n제목: ${title}\n날짜: ${date}`,CM?.name||'',CM?.phone||'');
+      showToast('등록 신청이 완료됐습니다. 관리자 승인 후 게시됩니다.');
+      setTimeout(()=>go('life-events'),700);
+    }catch(e){showToast('오류: '+e.message,'err');btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> 등록 신청';}
+  });
+}
+
+// ══ 관리자 애경사 관리 ══
+async function pgALifeEvents(){
+  const events=await getLifeEvents();
+  const pending=events.filter(e=>e.status==='pending');
+  const approved=events.filter(e=>e.status==='approved');
+
+  const typeLabel=t=>({happy:'🎉 경사',sad:'🕯️ 애사',birth:'👶 출산',wedding:'💍 결혼',retire:'🎓 퇴직',other:'📌 기타'}[t]||t);
+  const typeColor=t=>({happy:'#185FA5',sad:'#6A1B9A',birth:'#E65100',wedding:'#AD1457',retire:'#2E7D32',other:'#555'}[t]||'#555');
+  const typeBg=t=>({happy:'#E6F1FB',sad:'#F5F0F8',birth:'#FFF3E0',wedding:'#FCE4EC',retire:'#E8F5E9',other:'#F3F3F3'}[t]||'#F3F3F3');
+
+  const mkRow=(e,showActions)=>`<div class="card ale-row" data-search="${(e.memberName||'')} ${(e.title||'')} ${(e.note||'')}" style="margin-bottom:8px;border-left:3px solid ${typeColor(e.eventType)}">
+    <div style="padding:12px 16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+            <span style="font-size:11px;font-weight:700;background:${typeBg(e.eventType)};color:${typeColor(e.eventType)};padding:2px 8px;border-radius:10px">${typeLabel(e.eventType)}</span>
+            <span style="font-size:11px;color:var(--text2)">${e.eventDate||''}</span>
+          </div>
+          <div style="font-size:13px;font-weight:700">${e.memberName||''} <span style="font-size:11px;color:var(--text2);font-weight:400">${e.dept||''}</span></div>
+          <div style="font-size:12px;color:var(--text);margin-top:2px">${e.title||''}</div>
+          ${e.place?`<div style="font-size:11px;color:var(--text2);margin-top:2px"><i class="ti ti-map-pin" style="font-size:10px"></i> ${e.place}</div>`:''}
+          ${e.note?`<div style="font-size:11px;color:var(--text2);margin-top:3px;line-height:1.4">${e.note}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          ${showActions?`<button class="btn-sm le-approve-btn" data-lid="${e.id}" style="background:#004A2F;color:#fff;border-color:#004A2F;font-size:11px"><i class="ti ti-check"></i> 승인</button>
+          <button class="btn-sm le-reject-btn" data-lid="${e.id}" style="background:#FCEBEB;color:#791F1F;border-color:#e0b0b0;font-size:11px"><i class="ti ti-x"></i> 반려</button>`:''}
+          <button class="btn-sm le-del-btn" data-lid="${e.id}" style="background:#f5f5f5;color:#555;font-size:11px"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="go('admin-dash')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 뒤로</button>
+      <div><h2>애경사 공지 관리</h2><p>대기 ${pending.length}건 · 게시 ${approved.length}건</p></div>
+    </div>
+  </div>
+  ${mkSearchBar('ale-srch','이름·제목 검색...')}
+  <div class="pg">
+    <div class="card" style="margin-bottom:12px">
+      <div class="ch" id="ale-form-toggle" style="cursor:pointer">
+        <i class="ti ti-calendar-plus" style="color:#185FA5"></i><span>직접 등록하기</span>
+        <i class="ti ti-chevron-down" id="ale-chevron" style="margin-left:auto;font-size:14px;color:var(--text2)"></i>
+      </div>
+      <div id="ale-form" style="display:none;padding:14px 16px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px">
+          <div class="ale-type-btn sel-btn" data-type="happy" onclick="alePickType(this)"><i class="ti ti-confetti" style="color:#185FA5"></i><div class="lb" style="font-size:11px">경사</div></div>
+          <div class="ale-type-btn sel-btn" data-type="wedding" onclick="alePickType(this)"><i class="ti ti-rings-wedding" style="color:#AD1457"></i><div class="lb" style="font-size:11px">결혼</div></div>
+          <div class="ale-type-btn sel-btn" data-type="birth" onclick="alePickType(this)"><i class="ti ti-baby-carriage" style="color:#E65100"></i><div class="lb" style="font-size:11px">출산</div></div>
+          <div class="ale-type-btn sel-btn" data-type="retire" onclick="alePickType(this)"><i class="ti ti-award" style="color:#2E7D32"></i><div class="lb" style="font-size:11px">퇴직</div></div>
+          <div class="ale-type-btn sel-btn" data-type="sad" onclick="alePickType(this)"><i class="ti ti-candle" style="color:#6A1B9A"></i><div class="lb" style="font-size:11px">애사</div></div>
+          <div class="ale-type-btn sel-btn" data-type="other" onclick="alePickType(this)"><i class="ti ti-dots-circle-horizontal" style="color:#555"></i><div class="lb" style="font-size:11px">기타</div></div>
+        </div>
+        <input type="hidden" id="ale-type"/>
+        <div class="ig"><label>해당 조합원 이름 *</label><input type="text" id="ale-name" placeholder="예: 홍길동"/></div>
+        <div class="ig"><label>제목 *</label><input type="text" id="ale-title" placeholder="예: 부친상, 장녀 결혼식"/></div>
+        <div class="ig"><label>날짜 *</label><input type="date" id="ale-date"/></div>
+        <div class="ig"><label>장소 (선택)</label><input type="text" id="ale-place" placeholder="예: 홍성 추모공원"/></div>
+        <div class="ig"><label>내용 (선택)</label><textarea id="ale-note" rows="2" style="width:100%;padding:10px 12px;border:.5px solid var(--border);border-radius:8px;font-size:14px;resize:vertical;font-family:inherit;background:var(--card)" placeholder="추가 내용"></textarea></div>
+        <button class="btn btn-p" id="ale-submit"><i class="ti ti-send"></i> 바로 게시하기</button>
+      </div>
+    </div>
+    ${pending.length?`<div class="sl" style="color:#A32D2D">승인 대기 (${pending.length}건)</div>${pending.map(e=>mkRow(e,true)).join('')}`:''}
+    ${approved.length?`<div class="sl">게시 중 (${approved.length}건)</div>${approved.map(e=>mkRow(e,false)).join('')}`:''}
+    ${!pending.length&&!approved.length?`<div class="em"><i class="ti ti-calendar-off"></i><p>등록된 애경사가 없습니다</p></div>`:''}
+  </div>`;
+}
+window.alePickType=function(el){
+  document.querySelectorAll('.ale-type-btn').forEach(b=>{b.className='ale-type-btn sel-btn';});
+  el.className='ale-type-btn sel-btn on-happy';
+  document.getElementById('ale-type').value=el.dataset.type;
+};
+function bALifeEvents(){
+  bindSearch('ale-srch','.ale-row','');
+  document.getElementById('ale-form-toggle')?.addEventListener('click',()=>{
+    const form=document.getElementById('ale-form');
+    const chev=document.getElementById('ale-chevron');
+    const open=form.style.display==='none';
+    form.style.display=open?'block':'none';
+    chev.className='ti '+(open?'ti-chevron-up':'ti-chevron-down');
+  });
+  document.getElementById('ale-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('ale-submit')?.addEventListener('click',async()=>{
+    const type=document.getElementById('ale-type').value;
+    const name=document.getElementById('ale-name').value.trim();
+    const title=document.getElementById('ale-title').value.trim();
+    const date=document.getElementById('ale-date').value;
+    const place=document.getElementById('ale-place').value.trim();
+    const note=document.getElementById('ale-note').value.trim();
+    if(!type) return showToast('구분을 선택하세요','err');
+    if(!name) return showToast('조합원 이름을 입력하세요','err');
+    if(!title) return showToast('제목을 입력하세요','err');
+    if(!date) return showToast('날짜를 선택하세요','err');
+    const btn=document.getElementById('ale-submit');btn.disabled=true;
+    btn.innerHTML='<i class="ti ti-loader-2 spin"></i> 등록 중...';
+    try{
+      await addDoc(collection(db,'life_events'),{
+        uid:CU.uid,memberName:name,phone:'',dept:'',
+        eventType:type,title,eventDate:date,place,note,
+        status:'approved',registeredBy:'admin',createdAt:serverTimestamp()
+      });
+      showToast('애경사 공지가 게시됐습니다');
+      setTimeout(()=>go('admin-life-events'),600);
+    }catch(e){showToast('오류: '+e.message,'err');btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> 바로 게시하기';}
+  });
+  document.querySelectorAll('.le-approve-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+    try{await updateLifeEvent(btn.dataset.lid,{status:'approved'});showToast('게시 승인됐습니다');setTimeout(()=>go('admin-life-events'),600);}
+    catch(e){showToast('오류: '+e.message,'err');}
+  }));
+  document.querySelectorAll('.le-reject-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+    try{await updateLifeEvent(btn.dataset.lid,{status:'rejected'});showToast('반려됐습니다');setTimeout(()=>go('admin-life-events'),600);}
+    catch(e){showToast('오류: '+e.message,'err');}
+  }));
+  document.querySelectorAll('.le-del-btn').forEach(btn=>btn.addEventListener('click',async()=>{
+    if(!confirm('이 애경사 공지를 삭제하시겠습니까?')) return;
+    try{await deleteLifeEvent(btn.dataset.lid);showToast('삭제됐습니다');setTimeout(()=>go('admin-life-events'),600);}
+    catch(e){showToast('오류: '+e.message,'err');}
   }));
 }
 
@@ -1824,7 +2286,10 @@ function pgMemberCard(){
 
   return `<div class="hdr">
     <div style="display:flex;align-items:center;justify-content:space-between">
-      <div><h2><i class="ti ti-id-badge-2"></i> 조합원증</h2><p>충남도청 조합원 확인증</p></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="go('home')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 홈</button>
+        <div><h2><i class="ti ti-id-badge-2"></i> 조합원증</h2><p>충남도청 조합원 확인증</p></div>
+      </div>
       <button onclick="printMemberCard()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px"><i class="ti ti-download"></i> 저장</button>
     </div>
   </div>
@@ -1931,7 +2396,13 @@ async function pgPartners(){
   const cats=Object.keys(PCAT);
   const byCat=Object.fromEntries(cats.map(k=>[k,list.filter(p=>p.category===k)]));
   const catOpts=Object.entries(PCAT).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
-  return `<div class="hdr"><h2><i class="ti ti-building-store"></i> 제휴업체</h2><p>조합원 전용 할인 혜택</p></div>
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="go('home')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 홈</button>
+      <div><h2><i class="ti ti-building-store"></i> 제휴업체</h2><p>조합원 전용 할인 혜택</p></div>
+    </div>
+  </div>
+  ${mkSearchBar('pt-srch','업체명·할인내용·주소 검색...')}
   <div class="pg">
     <!-- 조합원 직접 등록 폼 -->
     <div class="card" style="margin-bottom:12px">
@@ -1971,7 +2442,7 @@ async function pgPartners(){
           <span style="font-size:11px;color:var(--text2)">(${items.length}곳)</span>
         </div>
         ${items.map(p=>`
-        <div class="card partner-card" data-pid="${p.id}" style="margin-bottom:8px;cursor:pointer">
+        <div class="card partner-card pt-row" data-pid="${p.id}" data-search="${(p.name||'').replace(/\"/g,'')} ${(p.discount||'').replace(/\"/g,'')} ${(p.address||'').replace(/\"/g,'')}" style="margin-bottom:8px;cursor:pointer">
           <div style="padding:14px 16px">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
               <div style="flex:1">
@@ -1998,6 +2469,7 @@ async function pgPartners(){
   </div>`;
 }
 function bPartners(){
+  bindSearch('pt-srch','.pt-row','');
   // 폼 토글
   document.getElementById('pt-form-toggle')?.addEventListener('click',()=>{
     const form=document.getElementById('pt-member-form');
@@ -2224,17 +2696,23 @@ function bASettings(){
 
 // ══ 공지사항 (조합원 열람) ══
 async function pgNotice(){
-  const snap=await getDocs(query(collection(db,'notices'),orderBy('createdAt','desc'),limit(30)));
+  const snap=await getDocs(query(collection(db,'notices'),orderBy('createdAt','desc'),limit(50)));
   const list=snap.docs.map(d=>({id:d.id,...d.data()}));
-  return `<div class="hdr"><h2><i class="ti ti-speakerphone"></i> 공지사항</h2><p>조합 공지 및 안내</p></div>
-  <div class="pg">
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="go('home')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 홈</button>
+      <div><h2><i class="ti ti-speakerphone"></i> 공지사항</h2><p>조합 공지 및 안내</p></div>
+    </div>
+  </div>
+  ${mkSearchBar('notice-srch','제목·내용 검색...')}
+  <div class="pg" id="notice-list">
     ${list.length===0?`<div class="em"><i class="ti ti-speakerphone"></i><p>등록된 공지사항이 없습니다</p></div>`:''}
     ${list.map(n=>`
-    <div class="card notice-item" data-nid="${n.id}" style="margin-bottom:10px;cursor:pointer">
+    <div class="card notice-item nc-row" data-nid="${n.id}" data-search="${(n.title||'').replace(/"/g,'')+ ' ' +(n.body||'').replace(/"/g,'')+ ' ' +(n.authorName||'')}" style="margin-bottom:10px;cursor:pointer">
       <div style="padding:14px 16px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           ${n.pinned?`<span style="background:#e74c3c;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700">공지</span>`:''}
-          <span style="font-size:14px;font-weight:600;flex:1">${n.title}</span>
+          <span class="srch-hl" data-raw="${(n.title||'').replace(/"/g,'&quot;')}" style="font-size:14px;font-weight:600;flex:1">${n.title}</span>
         </div>
         <div style="font-size:12px;color:var(--text2);display:flex;justify-content:space-between">
           <span>${n.authorName||'관리자'}</span>
@@ -2251,6 +2729,7 @@ async function pgANotice(){
   const snap=await getDocs(query(collection(db,'notices'),orderBy('createdAt','desc'),limit(50)));
   const list=snap.docs.map(d=>({id:d.id,...d.data()}));
   return `<div class="hdr"><h2><i class="ti ti-speakerphone"></i> 공지사항 관리</h2><p>공지 작성 및 관리</p></div>
+  ${mkSearchBar('anc-srch','제목·내용 검색...')}
   <div class="pg">
     <div class="card" style="margin-bottom:12px">
       <div class="ch"><i class="ti ti-plus"></i><span>새 공지 작성</span></div>
@@ -2267,7 +2746,7 @@ async function pgANotice(){
     <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:8px">등록된 공지 (${list.length}건)</div>
     ${list.length===0?`<div class="em"><i class="ti ti-speakerphone"></i><p>등록된 공지가 없습니다</p></div>`:''}
     ${list.map(n=>`
-    <div class="card" style="margin-bottom:8px">
+    <div class="card anc-row" data-search="${(n.title||'')} ${(n.body||'')}" style="margin-bottom:8px">
       <div style="padding:12px 16px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
           <div style="flex:1">
