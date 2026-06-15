@@ -501,15 +501,11 @@ async function pgHome(){
       </div>
     </div>`:''}
 
-    <!-- 공지·제휴·조합원증·내정보 바로가기 -->
+    <!-- 바로가기 그리드 -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <div onclick="go('notice')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
         <i class="ti ti-speakerphone" style="font-size:22px;color:#854F0B;display:block;margin-bottom:5px"></i>
         <div style="font-size:11px;font-weight:600;color:var(--text)">공지사항</div>
-      </div>
-      <div onclick="go('life-events')" style="background:linear-gradient(135deg,#185FA5,#A32D2D);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
-        <i class="ti ti-calendar-heart" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
-        <div style="font-size:11px;font-weight:600;color:#fff">애경사 공지</div>
       </div>
       <div onclick="go('partners')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
         <i class="ti ti-building-store" style="font-size:22px;color:#185FA5;display:block;margin-bottom:5px"></i>
@@ -518,6 +514,10 @@ async function pgHome(){
       <div onclick="go('membercard')" style="background:linear-gradient(135deg,#004A2F,#0F6E56);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
         <i class="ti ti-id-badge-2" style="font-size:22px;color:#FFD600;display:block;margin-bottom:5px"></i>
         <div style="font-size:11px;font-weight:600;color:#fff">조합원증</div>
+      </div>
+      <div onclick="go('life-events')" style="background:linear-gradient(135deg,#185FA5,#A32D2D);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
+        <i class="ti ti-calendar-heart" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:11px;font-weight:600;color:#fff">애경사 공지</div>
       </div>
       <div onclick="go('myinfo')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
         <i class="ti ti-user" style="font-size:22px;color:#0F6E56;display:block;margin-bottom:5px"></i>
@@ -1292,6 +1292,10 @@ async function pgADuesStatus(){
     ${unpaid.length?`
     <div class="sl">미납 (${unpaid.length}명)</div>
     <div class="card">${unpaid.map(m=>mkRow(m,false)).join('')}</div>`:''}
+
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
+    </div>
   </div>`;
 }
 
@@ -1485,6 +1489,9 @@ async function pgACharge(){
   <div class="pg">
     <button class="btn btn-p" id="bulk-btn" style="margin-bottom:10px"><i class="ti ti-bolt"></i> 납부 완료 회원 일괄 충전</button>
     <div class="card">${rows||'<div class="em" style="padding:20px"><i class="ti ti-users-off"></i><p>활성 회원 없음</p></div>'}</div>
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
+    </div>
   </div>
   <div class="mo hd" id="dues-modal">
     <div class="mb">
@@ -1685,7 +1692,11 @@ async function pgAApprove(){
       </div>`).join('')}
       <button class="btn btn-p" id="ap-approve"><i class="ti ti-check"></i> 승인 완료</button>
     </div>
-  </div>`;
+  </div>
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
+    </div>
+  </div>\`;
 }
 
 function bAApprove(){
@@ -1850,7 +1861,10 @@ async function pgACatReq(){
   </div>
   <div class="pg">
     ${!catSections.trim()?'<div class="em"><i class="ti ti-receipt-off"></i><p>이달 신청 내역이 없습니다</p></div>':catSections}
-  </div>`;
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
+    </div>
+  </div>\`;
 }
 
 function bACatReq(){
@@ -2124,6 +2138,10 @@ async function pgLifeEvents(){
     <div id="le-list">
     ${approved.map(e=>`<div class="le-row" data-search="${(e.memberName||'').replace(/"/g,'')} ${(e.title||'').replace(/"/g,'')} ${(e.note||'').replace(/"/g,'')} ${(e.place||'').replace(/"/g,'')} ${(e.eventType||'')}">${mkCard(e).replace('<div class="card"','<div class="card"')}</div>`).join('')}
     </div>`:`<div class="em"><i class="ti ti-calendar-off"></i><p>등록된 애경사 소식이 없습니다</p></div>`}
+
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
+    </div>
   </div>`;
 }
 window.lePickType=function(el){
@@ -2227,6 +2245,10 @@ async function pgALifeEvents(){
     ${pending.length?`<div class="sl" style="color:#A32D2D">승인 대기 (${pending.length}건)</div>${pending.map(e=>mkRow(e,true)).join('')}`:''}
     ${approved.length?`<div class="sl">게시 중 (${approved.length}건)</div>${approved.map(e=>mkRow(e,false)).join('')}`:''}
     ${!pending.length&&!approved.length?`<div class="em"><i class="ti ti-calendar-off"></i><p>등록된 애경사가 없습니다</p></div>`:''}
+
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
+    </div>
   </div>`;
 }
 window.alePickType=function(el){
@@ -2338,6 +2360,10 @@ function pgAdminMyInfo(){
     <button class="btn btn-s" id="admin-logout-btn">
       <i class="ti ti-logout"></i> 로그아웃
     </button>
+
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
+    </div>
   </div>`;
 }
 
@@ -2659,6 +2685,10 @@ async function pgAPartners(){
         </div>
       </div>`;
     }).join('')}
+
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
+    </div>
   </div>`;
 }
 function bAPartners(){
@@ -2787,6 +2817,10 @@ async function pgNotice(){
         <div class="notice-body" id="nb-${n.id}" style="display:none;margin-top:10px;padding-top:10px;border-top:.5px solid var(--border);font-size:13px;line-height:1.6;white-space:pre-wrap">${n.body||''}</div>
       </div>
     </div>`).join('')}
+
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
+    </div>
   </div>`;
 }
 
@@ -2832,6 +2866,10 @@ async function pgANotice(){
         <div style="margin-top:8px;font-size:12px;color:var(--text2);white-space:pre-wrap;max-height:80px;overflow:hidden;line-height:1.5">${(n.body||'').substring(0,200)}${(n.body||'').length>200?'…':''}</div>
       </div>
     </div>`).join('')}
+
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
+    </div>
   </div>`;
 }
 
