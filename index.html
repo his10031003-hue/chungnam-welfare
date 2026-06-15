@@ -114,6 +114,8 @@
     .srch-clear{background:none;border:none;color:rgba(255,255,255,.6);font-size:18px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0}
     .srch-count{font-size:11px;color:rgba(255,255,255,.55);white-space:nowrap;flex-shrink:0}
     .hl{background:#FFD600;color:#1a1a1a;border-radius:2px;padding:0 1px}
+    .fab-home{position:fixed;right:16px;bottom:80px;z-index:999;background:var(--green);color:#fff;border:none;border-radius:50%;width:46px;height:46px;font-size:20px;cursor:pointer;box-shadow:0 3px 12px rgba(0,74,47,.35);display:flex;align-items:center;justify-content:center;transition:transform .15s}
+    .fab-home:active{transform:scale(.92)}
   </style>
 </head>
 <body>
@@ -588,11 +590,14 @@ async function pgWelfare(){
     </div>`;
   }).join(''):'<div class="em" style="padding:20px"><i class="ti ti-receipt-off"></i><p>신청 내역이 없습니다</p></div>';
 
-  return `<div class="hdr"><h2>복지비 신청</h2>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-      <p>복지비 사용 신청</p>
-      <span style="font-size:13px;font-weight:700;color:#FFD600">잔액 ${fmtW(totalRemain)}</span>
+  return `<div class="hdr">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><h2>복지비 신청</h2><p>복지비 사용 신청</p></div>
+      <span style="font-size:13px;font-weight:700;color:#FFD600;margin-top:4px">잔액 ${fmtW(totalRemain)}</span>
     </div>
+  </div>
+  <div style="padding:8px 14px;background:var(--green);border-bottom:1px solid rgba(255,255,255,.15);text-align:center">
+    <button onclick="go('home')" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:18px;padding:6px 22px;cursor:pointer;font-size:12px;font-weight:600"><i class="ti ti-home" style="font-size:12px"></i> 홈으로 돌아가기</button>
   </div>
   <div class="pg">
     ${pendingAmt>0?`<div class="nt nta"><i class="ti ti-clock"></i><p>승인 대기 중인 신청액 <strong>${fmtW(pendingAmt)}</strong> — 승인 후 잔액에서 차감됩니다.</p></div>`:''}
@@ -831,7 +836,14 @@ async function pgSanjo(){
       <div class="am ${r.status==='paid'?'pl':'mn'}">${fmtW(r.amount)}</div>
     </div>`).join(''):`<div class="em" style="padding:20px"><i class="ti ti-heart-off"></i><p>신청 내역이 없습니다</p></div>`;
 
-  return `<div class="hdr"><h2>상조회비 신청</h2><p>잔여 복지비: ${fmtW(remain)}</p></div>
+  return `<div class="hdr">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><h2>상조회비 신청</h2><p>잔여 복지비: ${fmtW(remain)}</p></div>
+    </div>
+  </div>
+  <div style="padding:8px 14px;background:var(--green);border-bottom:1px solid rgba(255,255,255,.15);text-align:center">
+    <button onclick="go('home')" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:18px;padding:6px 22px;cursor:pointer;font-size:12px;font-weight:600"><i class="ti ti-home" style="font-size:12px"></i> 홈으로 돌아가기</button>
+  </div>
   <div class="pg">
     <div class="card" style="padding:14px 16px">
       <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">① 구분 선택</div>
@@ -926,6 +938,9 @@ function pgMyInfo(){
   const thisYear=new Date().getFullYear();
   const years=[thisYear,thisYear-1,thisYear-2].map(y=>`<option value="${y}">${y}년</option>`).join('');
   return `<div class="hdr"><h2>내 정보</h2></div>
+  <div style="padding:8px 14px;background:var(--green);border-bottom:1px solid rgba(255,255,255,.15);text-align:center">
+    <button onclick="go('home')" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:18px;padding:6px 22px;cursor:pointer;font-size:12px;font-weight:600"><i class="ti ti-home" style="font-size:12px"></i> 홈으로 돌아가기</button>
+  </div>
   <div class="pg">
     <div class="card" style="padding:16px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
@@ -1182,15 +1197,15 @@ async function pgADash(){
       <button class="btn btn-p" onclick="go('admin-charge')"><i class="ti ti-bolt"></i> 충전 관리</button>
       <button class="btn btn-s" onclick="go('admin-approve')"><i class="ti ti-check"></i> 승인 처리</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
-      <button class="btn btn-s" onclick="go('admin-notice')" style="width:100%;background:#854F0B;color:#fff"><i class="ti ti-speakerphone"></i> 공지사항</button>
-      <button class="btn btn-s" onclick="go('admin-life-events')" style="width:100%;background:linear-gradient(90deg,#185FA5,#A32D2D);color:#fff"><i class="ti ti-calendar-heart"></i> 애경사 공지 관리</button>
-      <button class="btn btn-s" onclick="go('admin-inquiry')" style="width:100%;background:#534AB7;color:#fff"><i class="ti ti-message-circle"></i> 문의·건의 관리</button>
-      <button class="btn btn-s" onclick="go('admin-partners')" style="width:100%;background:#185FA5;color:#fff"><i class="ti ti-building-store"></i> 제휴업체 관리</button>
-      <button class="btn btn-s" onclick="go('admin-members')" style="width:100%;background:#0F6E56;color:#fff"><i class="ti ti-users"></i> 조합원 관리</button>
-      <button class="btn btn-s" onclick="recalcAll()" style="width:100%;background:#BA7517;color:#fff" id="recalc-btn"><i class="ti ti-refresh"></i> 전체 잔액 재계산</button>
-      <button class="btn btn-s" onclick="go('admin-settings')" style="width:100%;background:#534AB7;color:#fff"><i class="ti ti-settings"></i> 조합 기본 설정</button>
-      <button class="btn btn-s" onclick="go('admin-approve').then(()=>{setTimeout(()=>{const el=document.querySelector('.sl');if(el)el.scrollIntoView({behavior:'smooth'})},300)})" style="width:100%;background:#A32D2D;color:#fff"><i class="ti ti-file-invoice"></i> 기부금영수증 승인</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <button class="btn btn-s" onclick="go('admin-notice')" style="background:#854F0B;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-speakerphone"></i> 공지사항</button>
+      <button class="btn btn-s" onclick="go('admin-life-events')" style="background:linear-gradient(90deg,#185FA5,#A32D2D);color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-calendar-heart"></i> 애경사 공지</button>
+      <button class="btn btn-s" onclick="go('admin-inquiry')" style="background:#534AB7;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-message-circle"></i> 문의·건의</button>
+      <button class="btn btn-s" onclick="go('admin-partners')" style="background:#185FA5;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-building-store"></i> 제휴업체</button>
+      <button class="btn btn-s" onclick="go('admin-members')" style="background:#0F6E56;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-users"></i> 조합원 관리</button>
+      <button class="btn btn-s" onclick="recalcAll()" style="background:#BA7517;color:#fff;padding:10px 6px;font-size:12px" id="recalc-btn"><i class="ti ti-refresh"></i> 잔액 재계산</button>
+      <button class="btn btn-s" onclick="go('admin-settings')" style="background:#534AB7;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-settings"></i> 기본 설정</button>
+      <button class="btn btn-s" onclick="go('admin-approve').then(()=>{setTimeout(()=>{const el=document.querySelector('.sl');if(el)el.scrollIntoView({behavior:'smooth'})},300)})" style="background:#A32D2D;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-file-invoice"></i> 기부금영수증</button>
     </div>
   </div>`;
 }
@@ -1276,6 +1291,9 @@ async function pgAMembers(){
     ${withdraw.length?`<div class="sl">탈퇴 신청 (${withdraw.length}명)</div><div class="card" id="mem-withdraw-list">${withdraw.map(mkRow).join('')}</div>`:''}
     <div class="sl">활성 조합원 (${active.length}명)</div>
     <div class="card" id="mem-active-list">${active.length?active.map(mkRow).join(''):'<div class="em" style="padding:20px"><i class="ti ti-users-off"></i><p>활성 조합원 없음</p></div>'}</div>
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
+    </div>
   </div>
   <div class="mo hd" id="mem-modal">
     <div class="mb">
@@ -1427,6 +1445,7 @@ async function pgACharge(){
     </div>`;
   }).join('');
   return `<div class="hdr"><div style="display:flex;align-items:center;justify-content:space-between"><div><h2>복지 충전 관리</h2><p>${ymLabel(ym)}</p></div></div></div>
+  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     <button class="btn btn-p" id="bulk-btn" style="margin-bottom:10px"><i class="ti ti-bolt"></i> 납부 완료 회원 일괄 충전</button>
     <div class="card">${rows||'<div class="em" style="padding:20px"><i class="ti ti-users-off"></i><p>활성 회원 없음</p></div>'}</div>
@@ -1597,6 +1616,7 @@ async function pgAApprove(){
     </div>`).join('');
 
   return `<div class="hdr"><h2>승인 처리</h2><p>가입·복지비·상조·기부금·조합비변경</p></div>
+  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     <div class="sl">가입 대기 (${pM.length}명)</div>
     <div class="card">${mRows||'<div class="em" style="padding:16px"><i class="ti ti-check"></i><p>대기 없음</p></div>'}</div>
@@ -1783,6 +1803,7 @@ async function pgACatReq(){
   const totalPending=wReqs.filter(r=>r.status==='pending').length;
 
   return `<div class="hdr"><h2>카테고리별 신청 현황</h2><p>${ymLabel(ym)} · 대기 ${totalPending}건</p></div>
+  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     ${!catSections.trim()?'<div class="em"><i class="ti ti-receipt-off"></i><p>이달 신청 내역이 없습니다</p></div>':catSections}
   </div>`;
@@ -1967,6 +1988,7 @@ async function pgAInquiry(){
     </div>
   </div>
   ${mkSearchBar('aiq-srch','이름·제목·내용 검색...')}
+  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     ${pending.length?`<div class="sl" style="color:#A32D2D">답변 대기 (${pending.length}건)</div>${pending.map(r=>mkRow(r)).join('')}`:''}
     ${answered.length?`<div class="sl">처리 완료 (${answered.length}건)</div>${answered.map(r=>mkRow(r)).join('')}`:''}
@@ -2135,6 +2157,7 @@ async function pgALifeEvents(){
     </div>
   </div>
   ${mkSearchBar('ale-srch','이름·제목 검색...')}
+  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     <div class="card" style="margin-bottom:12px">
       <div class="ch" id="ale-form-toggle" style="cursor:pointer">
@@ -2220,6 +2243,7 @@ function bALifeEvents(){
 // ══ 관리자 내 정보 ══
 function pgAdminMyInfo(){
   return `<div class="hdr"><h2>내 정보</h2><p>${roleL(CM?.role)}</p></div>
+  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     <div class="card" style="padding:16px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
@@ -2532,6 +2556,7 @@ async function pgAPartners(){
       <div><h2><i class="ti ti-building-store"></i> 제휴업체 관리</h2><p>총 ${list.length}개 업체</p></div>
     </div>
   </div>
+  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     <div class="card" style="margin-bottom:12px">
       <div class="ch"><i class="ti ti-plus"></i><span>업체 등록</span></div>
@@ -2644,6 +2669,7 @@ async function pgASettings(){
       <div><h2><i class="ti ti-settings"></i> 조합 기본 설정</h2><p>홈 화면에 표시되는 정보 관리</p></div>
     </div>
   </div>
+  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     <div class="card" style="margin-bottom:12px">
       <div class="ch"><i class="ti ti-building-bank" style="color:#185FA5"></i><span>조합비 납부 계좌</span></div>
@@ -2730,6 +2756,7 @@ async function pgANotice(){
   const list=snap.docs.map(d=>({id:d.id,...d.data()}));
   return `<div class="hdr"><h2><i class="ti ti-speakerphone"></i> 공지사항 관리</h2><p>공지 작성 및 관리</p></div>
   ${mkSearchBar('anc-srch','제목·내용 검색...')}
+  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     <div class="card" style="margin-bottom:12px">
       <div class="ch"><i class="ti ti-plus"></i><span>새 공지 작성</span></div>
