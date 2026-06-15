@@ -548,17 +548,15 @@ async function pgHome(){
       </div>
     </div>`:''}
 
-    <!-- 기부금영수증 + 문의/건의 바로가기 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div onclick="go('myinfo')" style="background:linear-gradient(135deg,#3730A3,#534AB7);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
-        <i class="ti ti-file-invoice" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
-        <div style="font-size:11px;font-weight:600;color:#fff">기부금영수증</div>
-        <div style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px">내 정보에서 신청</div>
-      </div>
-      <div onclick="go('life-events')" style="background:linear-gradient(135deg,#185FA5,#A32D2D);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
-        <i class="ti ti-calendar-heart" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
-        <div style="font-size:11px;font-weight:600;color:#fff">애경사 공지</div>
-        <div style="font-size:9px;color:rgba(255,255,255,.65);margin-top:2px">경조사 소식 보기·등록</div>
+    <!-- 기부금영수증 신청 바로가기 -->
+    <div style="margin-bottom:10px">
+      <div onclick="go('myinfo')" style="background:linear-gradient(135deg,#3730A3,#534AB7);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer">
+        <i class="ti ti-file-invoice" style="font-size:22px;color:#fff;flex-shrink:0"></i>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#fff">기부금영수증 신청</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">내 정보 → 기부금영수증 탭에서 신청</div>
+        </div>
+        <i class="ti ti-chevron-right" style="font-size:16px;color:rgba(255,255,255,.5);margin-left:auto"></i>
       </div>
     </div>
   </div>`;
@@ -591,13 +589,11 @@ async function pgWelfare(){
   }).join(''):'<div class="em" style="padding:20px"><i class="ti ti-receipt-off"></i><p>신청 내역이 없습니다</p></div>';
 
   return `<div class="hdr">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
       <div><h2>복지비 신청</h2><p>복지비 사용 신청</p></div>
       <span style="font-size:13px;font-weight:700;color:#FFD600;margin-top:4px">잔액 ${fmtW(totalRemain)}</span>
     </div>
-  </div>
-  <div style="padding:8px 14px;background:var(--green);border-bottom:1px solid rgba(255,255,255,.15);text-align:center">
-    <button onclick="go('home')" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:18px;padding:6px 22px;cursor:pointer;font-size:12px;font-weight:600"><i class="ti ti-home" style="font-size:12px"></i> 홈으로 돌아가기</button>
+    <button onclick="go('home')" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:18px;padding:6px 18px;cursor:pointer;font-size:12px;font-weight:600;width:100%"><i class="ti ti-home" style="font-size:12px"></i> 홈으로 돌아가기</button>
   </div>
   <div class="pg">
     ${pendingAmt>0?`<div class="nt nta"><i class="ti ti-clock"></i><p>승인 대기 중인 신청액 <strong>${fmtW(pendingAmt)}</strong> — 승인 후 잔액에서 차감됩니다.</p></div>`:''}
@@ -837,12 +833,10 @@ async function pgSanjo(){
     </div>`).join(''):`<div class="em" style="padding:20px"><i class="ti ti-heart-off"></i><p>신청 내역이 없습니다</p></div>`;
 
   return `<div class="hdr">
-    <div style="display:flex;justify-content:space-between;align-items:center">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div><h2>상조회비 신청</h2><p>잔여 복지비: ${fmtW(remain)}</p></div>
     </div>
-  </div>
-  <div style="padding:8px 14px;background:var(--green);border-bottom:1px solid rgba(255,255,255,.15);text-align:center">
-    <button onclick="go('home')" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:18px;padding:6px 22px;cursor:pointer;font-size:12px;font-weight:600"><i class="ti ti-home" style="font-size:12px"></i> 홈으로 돌아가기</button>
+    <button onclick="go('home')" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:18px;padding:6px 18px;cursor:pointer;font-size:12px;font-weight:600;width:100%"><i class="ti ti-home" style="font-size:12px"></i> 홈으로 돌아가기</button>
   </div>
   <div class="pg">
     <div class="card" style="padding:14px 16px">
@@ -937,9 +931,9 @@ function pgMyInfo(){
   const jobLabel=CM?.jobType==='전직'?`전직 (사무총국)`:CM?.jobType==='현직'?`현직 (${CM?.dept||''})`:CM?.dept||'';
   const thisYear=new Date().getFullYear();
   const years=[thisYear,thisYear-1,thisYear-2].map(y=>`<option value="${y}">${y}년</option>`).join('');
-  return `<div class="hdr"><h2>내 정보</h2></div>
-  <div style="padding:8px 14px;background:var(--green);border-bottom:1px solid rgba(255,255,255,.15);text-align:center">
-    <button onclick="go('home')" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:18px;padding:6px 22px;cursor:pointer;font-size:12px;font-weight:600"><i class="ti ti-home" style="font-size:12px"></i> 홈으로 돌아가기</button>
+  return `<div class="hdr">
+    <h2>내 정보</h2>
+    <button onclick="go('home')" style="background:rgba(255,255,255,.18);border:none;color:#fff;border-radius:18px;padding:6px 18px;cursor:pointer;font-size:12px;font-weight:600;width:100%;margin-top:8px"><i class="ti ti-home" style="font-size:12px"></i> 홈으로 돌아가기</button>
   </div>
   <div class="pg">
     <div class="card" style="padding:16px;margin-bottom:10px">
@@ -1197,15 +1191,53 @@ async function pgADash(){
       <button class="btn btn-p" onclick="go('admin-charge')"><i class="ti ti-bolt"></i> 충전 관리</button>
       <button class="btn btn-s" onclick="go('admin-approve')"><i class="ti ti-check"></i> 승인 처리</button>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-      <button class="btn btn-s" onclick="go('admin-notice')" style="background:#854F0B;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-speakerphone"></i> 공지사항</button>
-      <button class="btn btn-s" onclick="go('admin-life-events')" style="background:linear-gradient(90deg,#185FA5,#A32D2D);color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-calendar-heart"></i> 애경사 공지</button>
-      <button class="btn btn-s" onclick="go('admin-inquiry')" style="background:#534AB7;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-message-circle"></i> 문의·건의</button>
-      <button class="btn btn-s" onclick="go('admin-partners')" style="background:#185FA5;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-building-store"></i> 제휴업체</button>
-      <button class="btn btn-s" onclick="go('admin-members')" style="background:#0F6E56;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-users"></i> 조합원 관리</button>
-      <button class="btn btn-s" onclick="recalcAll()" style="background:#BA7517;color:#fff;padding:10px 6px;font-size:12px" id="recalc-btn"><i class="ti ti-refresh"></i> 잔액 재계산</button>
-      <button class="btn btn-s" onclick="go('admin-settings')" style="background:#534AB7;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-settings"></i> 기본 설정</button>
-      <button class="btn btn-s" onclick="go('admin-approve').then(()=>{setTimeout(()=>{const el=document.querySelector('.sl');if(el)el.scrollIntoView({behavior:'smooth'})},300)})" style="background:#A32D2D;color:#fff;padding:10px 6px;font-size:12px"><i class="ti ti-file-invoice"></i> 기부금영수증</button>
+    <!-- 관리 메뉴 아이콘 그리드 -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px">
+      <div onclick="go('admin-notice')" style="background:#854F0B;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-speakerphone" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">공지사항</div>
+      </div>
+      <div onclick="go('admin-life-events')" style="background:linear-gradient(135deg,#185FA5,#A32D2D);border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-calendar-heart" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">애경사 공지</div>
+      </div>
+      <div onclick="go('admin-inquiry')" style="background:#534AB7;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-message-circle" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">문의·건의</div>
+      </div>
+      <div onclick="go('admin-partners')" style="background:#185FA5;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-building-store" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">제휴업체</div>
+      </div>
+      <div onclick="go('admin-members')" style="background:#0F6E56;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-users" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">조합원 관리</div>
+      </div>
+      <div onclick="go('admin-charge')" style="background:#0F6E56;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer;opacity:.85">
+        <i class="ti ti-bolt" style="font-size:22px;color:#FFD600;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">복지 충전</div>
+      </div>
+      <div onclick="go('admin-approve')" style="background:#A32D2D;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-check" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">승인 처리</div>
+      </div>
+      <div onclick="recalcAll()" id="recalc-btn" style="background:#BA7517;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-refresh" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">잔액 재계산</div>
+      </div>
+      <div onclick="go('admin-settings')" style="background:#534AB7;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-settings" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">기본 설정</div>
+      </div>
+    </div>
+    <!-- 기부금영수증 승인 별도 표시 -->
+    <div onclick="go('admin-approve').then(()=>{setTimeout(()=>{const el=document.querySelector('.sl');if(el)el.scrollIntoView({behavior:'smooth'})},300)})" style="background:#A32D2D;border-radius:10px;padding:12px 16px;margin-top:8px;display:flex;align-items:center;gap:10px;cursor:pointer">
+      <i class="ti ti-file-invoice" style="font-size:20px;color:#fff;flex-shrink:0"></i>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#fff">기부금영수증 승인</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.7);margin-top:1px">조합원 기부금영수증 발급 신청 처리</div>
+      </div>
+      <i class="ti ti-chevron-right" style="font-size:14px;color:rgba(255,255,255,.5);margin-left:auto"></i>
     </div>
   </div>`;
 }
@@ -1444,8 +1476,12 @@ async function pgACharge(){
       </div>
     </div>`;
   }).join('');
-  return `<div class="hdr"><div style="display:flex;align-items:center;justify-content:space-between"><div><h2>복지 충전 관리</h2><p>${ymLabel(ym)}</p></div></div></div>
-  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="go('admin-dash')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 뒤로</button>
+      <div><h2>복지 충전 관리</h2><p>${ymLabel(ym)}</p></div>
+    </div>
+  </div>
   <div class="pg">
     <button class="btn btn-p" id="bulk-btn" style="margin-bottom:10px"><i class="ti ti-bolt"></i> 납부 완료 회원 일괄 충전</button>
     <div class="card">${rows||'<div class="em" style="padding:20px"><i class="ti ti-users-off"></i><p>활성 회원 없음</p></div>'}</div>
@@ -1615,8 +1651,12 @@ async function pgAApprove(){
       </div>
     </div>`).join('');
 
-  return `<div class="hdr"><h2>승인 처리</h2><p>가입·복지비·상조·기부금·조합비변경</p></div>
-  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="go('admin-dash')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 뒤로</button>
+      <div><h2>승인 처리</h2><p>가입·복지비·상조·기부금·조합비변경</p></div>
+    </div>
+  </div>
   <div class="pg">
     <div class="sl">가입 대기 (${pM.length}명)</div>
     <div class="card">${mRows||'<div class="em" style="padding:16px"><i class="ti ti-check"></i><p>대기 없음</p></div>'}</div>
@@ -1802,8 +1842,12 @@ async function pgACatReq(){
 
   const totalPending=wReqs.filter(r=>r.status==='pending').length;
 
-  return `<div class="hdr"><h2>카테고리별 신청 현황</h2><p>${ymLabel(ym)} · 대기 ${totalPending}건</p></div>
-  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="go('admin-dash')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 뒤로</button>
+      <div><h2>카테고리별 신청 현황</h2><p>${ymLabel(ym)} · 대기 ${totalPending}건</p></div>
+    </div>
+  </div>
   <div class="pg">
     ${!catSections.trim()?'<div class="em"><i class="ti ti-receipt-off"></i><p>이달 신청 내역이 없습니다</p></div>':catSections}
   </div>`;
@@ -1988,7 +2032,6 @@ async function pgAInquiry(){
     </div>
   </div>
   ${mkSearchBar('aiq-srch','이름·제목·내용 검색...')}
-  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     ${pending.length?`<div class="sl" style="color:#A32D2D">답변 대기 (${pending.length}건)</div>${pending.map(r=>mkRow(r)).join('')}`:''}
     ${answered.length?`<div class="sl">처리 완료 (${answered.length}건)</div>${answered.map(r=>mkRow(r)).join('')}`:''}
@@ -2157,7 +2200,6 @@ async function pgALifeEvents(){
     </div>
   </div>
   ${mkSearchBar('ale-srch','이름·제목 검색...')}
-  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     <div class="card" style="margin-bottom:12px">
       <div class="ch" id="ale-form-toggle" style="cursor:pointer">
@@ -2242,8 +2284,12 @@ function bALifeEvents(){
 
 // ══ 관리자 내 정보 ══
 function pgAdminMyInfo(){
-  return `<div class="hdr"><h2>내 정보</h2><p>${roleL(CM?.role)}</p></div>
-  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <button onclick="go('admin-dash')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 뒤로</button>
+      <div><h2>내 정보</h2><p>${roleL(CM?.role)}</p></div>
+    </div>
+  </div>
   <div class="pg">
     <div class="card" style="padding:16px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
@@ -2405,14 +2451,10 @@ window.printMemberCard=function(){
   showToast('스크린샷으로 저장하세요 (전원+볼륨하 또는 홈+전원)');
 };
 const PCAT={
-  food:{label:'음식점',icon:'ti-tools-kitchen-2',color:'#534AB7'},
-  cafe:{label:'카페·음료',icon:'ti-coffee',color:'#185FA5'},
-  mart:{label:'마트·편의점',icon:'ti-shopping-cart',color:'#BA7517'},
-  health:{label:'건강·약국',icon:'ti-first-aid-kit',color:'#3B6D11'},
-  beauty:{label:'미용·뷰티',icon:'ti-scissors',color:'#A32D2D'},
-  culture:{label:'문화·여가',icon:'ti-movie',color:'#854F0B'},
-  edu:{label:'교육',icon:'ti-school',color:'#0F6E56'},
-  fuel:{label:'유류·정비',icon:'ti-gas-station',color:'#7A3A10'},
+  stay:{label:'숙박·체험마을',icon:'ti-home-2',color:'#185FA5'},
+  hospital:{label:'병원·건강검진',icon:'ti-first-aid-kit',color:'#A32D2D'},
+  food:{label:'음식·커피숍',icon:'ti-tools-kitchen-2',color:'#534AB7'},
+  travel:{label:'여행',icon:'ti-plane',color:'#0F6E56'},
   etc:{label:'기타',icon:'ti-tag',color:'#555'}
 };
 async function pgPartners(){
@@ -2556,7 +2598,6 @@ async function pgAPartners(){
       <div><h2><i class="ti ti-building-store"></i> 제휴업체 관리</h2><p>총 ${list.length}개 업체</p></div>
     </div>
   </div>
-  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     <div class="card" style="margin-bottom:12px">
       <div class="ch"><i class="ti ti-plus"></i><span>업체 등록</span></div>
@@ -2669,7 +2710,6 @@ async function pgASettings(){
       <div><h2><i class="ti ti-settings"></i> 조합 기본 설정</h2><p>홈 화면에 표시되는 정보 관리</p></div>
     </div>
   </div>
-  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     <div class="card" style="margin-bottom:12px">
       <div class="ch"><i class="ti ti-building-bank" style="color:#185FA5"></i><span>조합비 납부 계좌</span></div>
@@ -2754,9 +2794,13 @@ async function pgNotice(){
 async function pgANotice(){
   const snap=await getDocs(query(collection(db,'notices'),orderBy('createdAt','desc'),limit(50)));
   const list=snap.docs.map(d=>({id:d.id,...d.data()}));
-  return `<div class="hdr"><h2><i class="ti ti-speakerphone"></i> 공지사항 관리</h2><p>공지 작성 및 관리</p></div>
+  return `<div class="hdr">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="go('admin-dash')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 뒤로</button>
+      <div><h2><i class="ti ti-speakerphone"></i> 공지사항 관리</h2><p>공지 작성 및 관리</p></div>
+    </div>
+  </div>
   ${mkSearchBar('anc-srch','제목·내용 검색...')}
-  <button class="fab-home" onclick="go('admin-dash')" title="대시보드로"><i class="ti ti-layout-dashboard" style="font-size:18px"></i></button>
   <div class="pg">
     <div class="card" style="margin-bottom:12px">
       <div class="ch"><i class="ti ti-plus"></i><span>새 공지 작성</span></div>
