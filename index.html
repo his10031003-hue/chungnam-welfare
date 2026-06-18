@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-  <title>조합 복지 앱</title>
+  <title>충남 복지통</title>
   <!-- PWA 설정 -->
   <meta name="application-name" content="조합복지앱"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -216,16 +216,20 @@ async function notify(title,message,from,phone=''){
 }
 
 const CATS={
-  coffee:{label:'커피·음료·제과',icon:'ti-coffee',color:'#185FA5'},
-  health:{label:'건강·약국',icon:'ti-first-aid-kit',color:'#3B6D11'},
-  culture:{label:'문화·여가',icon:'ti-movie',color:'#854F0B'},
-  edu:{label:'학원·과외 등 교육비',icon:'ti-school',color:'#0F6E56'},
-  fuel:{label:'유류지원',icon:'ti-gas-station',color:'#A32D2D'},
-  food:{label:'교통·음식·숙박',icon:'ti-tools-kitchen-2',color:'#534AB7'},
-  mart:{label:'편의점·마트 등',icon:'ti-shopping-cart',color:'#BA7517'},
-  local:{label:'지역상품권',icon:'ti-ticket',color:'#0F766E'},
-  online:{label:'온라인 매장',icon:'ti-device-laptop',color:'#185F7A'},
-  etc:{label:'기타 (생활 필수경비 등)',icon:'ti-dots-circle-horizontal',color:'#6B6B6B'},
+  health:{label:'건강·의료',icon:'ti-first-aid-kit',color:'#3B6D11',
+    desc:'병원비, 약국, 건강검진, 한의원, 안경·렌즈 등'},
+  food:{label:'식비·외식',icon:'ti-tools-kitchen-2',color:'#534AB7',
+    desc:'음식점, 카페·커피숍, 제과점, 배달앱 등'},
+  culture:{label:'여가·문화',icon:'ti-movie',color:'#854F0B',
+    desc:'영화·공연·스포츠 관람, 여행, 숙박, 교통·유류 등'},
+  edu:{label:'자기개발·자녀교육',icon:'ti-school',color:'#0F6E56',
+    desc:'학원·과외, 도서구입, 자격증, 어학, 온라인 강의 등'},
+  home:{label:'가정생활',icon:'ti-home',color:'#185FA5',
+    desc:'육아용품, 가사서비스, 마트·편의점, 온라인쇼핑 등'},
+  local:{label:'지역상품권',icon:'ti-ticket',color:'#0F766E',
+    desc:'충남사랑상품권, 지역화폐 등'},
+  etc:{label:'기타',icon:'ti-dots-circle-horizontal',color:'#6B6B6B',
+    desc:'위 항목에 해당하지 않는 생활 필수경비'},
 };
 const CK=Object.keys(CATS);
 
@@ -626,7 +630,13 @@ async function pgWelfare(){
     </div>
 
     <div class="card" style="padding:14px 16px">
-      <div class="ig"><label>카테고리</label><select id="w-cat">${opts}</select></div>
+      <div class="ig">
+        <label>카테고리 <span style="font-size:10px;color:var(--text2);font-weight:400">※ 선택 후 사용 가능 항목 확인</span></label>
+        <select id="w-cat">${opts}</select>
+        <div id="w-cat-desc" style="margin-top:6px;padding:8px 10px;background:#EAF3DE;border-radius:6px;font-size:11px;color:#27500A;display:none">
+          <i class="ti ti-info-circle" style="font-size:11px;margin-right:4px"></i><span id="w-cat-desc-txt"></span>
+        </div>
+      </div>
       <div class="ig">
         <label>사용 금액 (원)</label>
         <input type="number" id="w-amt" placeholder="예: 15000" step="1000" data-remain="${totalRemain}"/>
@@ -640,19 +650,49 @@ async function pgWelfare(){
       <div class="ig"><label>영수증 번호 (선택)</label><input type="text" id="w-receipt" placeholder="카드 승인번호 또는 영수증 번호"/></div>
       <button class="btn btn-p" id="w-sub"><i class="ti ti-send"></i> 복지비 신청하기</button>
     </div>
+    <!-- 카테고리별 사용 가능 항목 안내 -->
+    <div class="card" style="margin-bottom:10px">
+      <div class="ch" id="cat-guide-toggle" style="cursor:pointer">
+        <i class="ti ti-bookmark" style="color:#854F0B"></i>
+        <span>카테고리별 사용 가능 항목 안내</span>
+        <i class="ti ti-chevron-down" id="cat-guide-chev" style="margin-left:auto;font-size:14px;color:var(--text2)"></i>
+      </div>
+      <div id="cat-guide-body" style="display:none;padding:10px 16px 14px">
+        ${Object.entries(CATS).map(([k,v])=>`<div style="padding:8px 0;border-bottom:.5px solid var(--border)"><div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><i class="ti ${v.icon}" style="font-size:14px;color:${v.color}"></i><span style="font-size:12px;font-weight:700;color:${v.color}">${v.label}</span></div><div style="font-size:11px;color:var(--text2);margin-left:20px;line-height:1.5">${v.desc||''}</div></div>`).join('')}
+      </div>
+    </div>
+
     <div class="sl">신청 내역</div>
     <div class="card">${rows}</div>
   </div>`;
 }
 
 function bWelfare(){
+  // 카테고리 선택 시 안내문 표시
+  const showCatDesc=()=>{
+    const k=document.getElementById('w-cat')?.value;
+    const desc=CATS[k]?.desc||'';
+    const el=document.getElementById('w-cat-desc');
+    const txt=document.getElementById('w-cat-desc-txt');
+    if(el&&txt){txt.textContent=desc;el.style.display=desc?'block':'none';}
+  };
+  document.getElementById('w-cat')?.addEventListener('change',showCatDesc);
+  showCatDesc();
+  // 카테고리 안내 토글
+  document.getElementById('cat-guide-toggle')?.addEventListener('click',()=>{
+    const body=document.getElementById('cat-guide-body');
+    const chev=document.getElementById('cat-guide-chev');
+    const open=body.style.display==='none';
+    body.style.display=open?'block':'none';
+    chev.className='ti '+(open?'ti-chevron-up':'ti-chevron-down');
+  });
   document.getElementById('w-date').value=today();
 
   // ── 영수증 스캔 (무료 OCR) ──
   // 카테고리 키워드 매핑
   const CAT_KEYWORDS={
-    coffee:['카페','커피','스타벅스','투썸','빽다방','이디야','할리스','메가커피','공차','버블티','베이커리','뚜레쥬르','파리바게뜨','파리크라상','브레드','케이크','제과','빵'],
-    food:['식당','음식','한식','중식','일식','분식','치킨','피자','버거','햄버거','KFC','롯데리아','맥도날드','버스','지하철','택시','카카오택시','우버','숙박','호텔','펜션','모텔','고속도로','주유','기차','KTX','항공'],
+    food:['카페','커피','스타벅스','투썸','빽다방','이디야','할리스','메가커피','공차','버블티','베이커리','뚜레쥬르','파리바게뜨','제과','빵','식당','음식','한식','중식','일식','분식','치킨','피자','버거','햄버거','KFC','롯데리아','맥도날드','배달'],
+    culture:['버스','지하철','택시','카카오택시','우버','숙박','호텔','펜션','모텔','고속도로','주유','기차','KTX','항공','영화','공연','스포츠','여행'],
     mart:['마트','이마트','홈플러스','롯데마트','코스트코','편의점','CU','GS25','세븐','미니스톱','올리브영','다이소'],
     health:['병원','의원','약국','한의원','치과','안과','피부과','정형외과','내과','약'],
     culture:['영화','CGV','롯데시네마','메가박스','공연','전시','박물관','문화','스포츠','헬스','피트니스','수영'],
@@ -2384,7 +2424,7 @@ function pgMemberCard(){
     <div style="display:flex;align-items:center;justify-content:space-between">
       <div style="display:flex;align-items:center;gap:8px">
         <button onclick="go('home')" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;flex-shrink:0">← 홈</button>
-        <div><h2><i class="ti ti-id-badge-2"></i> 조합원증</h2><p>충남도청 조합원 확인증</p></div>
+        <div><h2><i class="ti ti-id-badge-2"></i> 조합원증</h2><p>충남 복지통 조합원 확인증</p></div>
       </div>
       <button onclick="printMemberCard()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px"><i class="ti ti-download"></i> 저장</button>
     </div>
@@ -2878,8 +2918,8 @@ function renderSignup(){
   appEl.innerHTML=`
   <div class="lw">
     <i class="ti ti-building-community" style="font-size:48px;color:#fff;margin-bottom:8px"></i>
-    <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">조합 복지 앱</div>
-    <div style="font-size:13px;color:rgba(255,255,255,.65);margin-bottom:24px">충남도청 조합원 가입 신청</div>
+    <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">충남 복지통</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.65);margin-bottom:24px">충남 복지통 · 조합원 가입</div>
     <div class="lc">
       <div style="font-size:15px;font-weight:700;margin-bottom:16px;text-align:center">조합원 가입 신청</div>
       <div class="ig"><label>이름</label><input type="text" id="s-name" placeholder="홍길동"/></div>
@@ -2964,8 +3004,8 @@ function renderLogin(){
   appEl.innerHTML=`
   <div class="lw">
     <i class="ti ti-building-community" style="font-size:48px;color:#fff;margin-bottom:8px"></i>
-    <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">조합 복지 앱</div>
-    <div style="font-size:13px;color:rgba(255,255,255,.65);margin-bottom:24px">충남도청 조합 후생복지</div>
+    <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">충남 복지통</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.65);margin-bottom:24px">충남도청 조합 후생복지 서비스</div>
     <div class="lc">
       <div class="ig">
         <label>전화번호 (또는 관리자 이메일)</label>
