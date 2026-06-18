@@ -1,8 +1,8 @@
 {
-  "name": "조합 복지 앱",
-  "short_name": "조합복지",
-  "description": "충남도청 조합 후생복지",
-  "start_url": "./",
+  "name": "충남 복지통",
+  "short_name": "복지통",
+  "description": "충남복지통공무원노동조합 후생복지 서비스",
+  "start_url": "/chungnam-welfare/",
   "display": "standalone",
   "background_color": "#004A2F",
   "theme_color": "#004A2F",
@@ -11,14 +11,12 @@
     {
       "src": "icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
