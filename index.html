@@ -457,6 +457,7 @@ async function pgHome(){
 
   const jobLabel=CM?.jobType==='전직'?`전직 (${CM?.dept||''})`:CM?.jobType==='현직'?`현직 (${CM?.dept||''})`:CM?.dept||'';
   return `<div class="hdr">
+    <div style="font-size:10px;color:rgba(255,255,255,.5);margin-bottom:5px;letter-spacing:.3px">충남 복지통 · 충남복지통공무원노동조합</div>
     <div style="display:flex;align-items:center;justify-content:space-between">
       <div><div style="font-size:15px;font-weight:700;color:#fff">${CM?.name||''} 님</div>
       <div style="font-size:11px;opacity:.6;color:#fff;margin-top:1px">${jobLabel} · ${ymLabel(ym)}</div></div>
@@ -489,10 +490,18 @@ async function pgHome(){
       <div style="font-size:10px;opacity:.4;margin-top:4px">총 복지비 ${fmtW(totalCharge)} · ${lim?.charged?'충전완료':'미충전'}</div>
     </div>
 
-    <!-- 바로가기 버튼 -->
+    <!-- 주요 기능 버튼 -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <button class="btn btn-p" onclick="go('welfare')"><i class="ti ti-credit-card"></i> 복지비 신청</button>
-      <button class="btn btn-s" onclick="go('sanjo')"><i class="ti ti-heart"></i> 상조회비</button>
+      <div onclick="go('welfare')" style="background:linear-gradient(135deg,#004A2F,#0F6E56);border-radius:12px;padding:16px 10px;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,74,47,.2)">
+        <i class="ti ti-credit-card" style="font-size:26px;color:#FFD600;display:block;margin-bottom:6px"></i>
+        <div style="font-size:13px;font-weight:700;color:#fff">복지비 신청</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">복지포인트 사용</div>
+      </div>
+      <div onclick="go('sanjo')" style="background:linear-gradient(135deg,#A32D2D,#C0392B);border-radius:12px;padding:16px 10px;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(163,45,45,.2)">
+        <i class="ti ti-heart" style="font-size:26px;color:#FFD600;display:block;margin-bottom:6px"></i>
+        <div style="font-size:13px;font-weight:700;color:#fff">상조회비 신청</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">경조사 지원금</div>
+      </div>
     </div>
 
     <!-- 사용 내역 -->
@@ -506,30 +515,30 @@ async function pgHome(){
     </div>`:''}
 
     <!-- 바로가기 그리드 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div onclick="go('notice')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
-        <i class="ti ti-speakerphone" style="font-size:22px;color:#854F0B;display:block;margin-bottom:5px"></i>
-        <div style="font-size:11px;font-weight:600;color:var(--text)">공지사항</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+      <div onclick="go('notice')" style="background:#854F0B;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-speakerphone" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">공지사항</div>
       </div>
-      <div onclick="go('partners')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
-        <i class="ti ti-building-store" style="font-size:22px;color:#185FA5;display:block;margin-bottom:5px"></i>
-        <div style="font-size:11px;font-weight:600;color:var(--text)">제휴업체</div>
-      </div>
-      <div onclick="go('membercard')" style="background:linear-gradient(135deg,#004A2F,#0F6E56);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
-        <i class="ti ti-id-badge-2" style="font-size:22px;color:#FFD600;display:block;margin-bottom:5px"></i>
-        <div style="font-size:11px;font-weight:600;color:#fff">조합원증</div>
-      </div>
-      <div onclick="go('life-events')" style="background:linear-gradient(135deg,#185FA5,#A32D2D);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
+      <div onclick="go('life-events')" style="background:linear-gradient(135deg,#185FA5,#A32D2D);border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
         <i class="ti ti-calendar-heart" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
-        <div style="font-size:11px;font-weight:600;color:#fff">애경사 공지</div>
+        <div style="font-size:10px;font-weight:600;color:#fff">애경사 공지</div>
       </div>
-      <div onclick="go('myinfo')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
-        <i class="ti ti-user" style="font-size:22px;color:#0F6E56;display:block;margin-bottom:5px"></i>
-        <div style="font-size:11px;font-weight:600;color:var(--text)">내 정보</div>
+      <div onclick="go('partners')" style="background:#185FA5;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-building-store" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">제휴업체</div>
       </div>
-      <div onclick="go('inquiry')" style="background:var(--card);border:.5px solid var(--border);border-radius:10px;padding:14px 8px;text-align:center;cursor:pointer">
-        <i class="ti ti-message-circle" style="font-size:22px;color:#534AB7;display:block;margin-bottom:5px"></i>
-        <div style="font-size:11px;font-weight:600;color:var(--text)">문의·건의</div>
+      <div onclick="go('membercard')" style="background:linear-gradient(135deg,#004A2F,#0F6E56);border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-id-badge-2" style="font-size:22px;color:#FFD600;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">조합원증</div>
+      </div>
+      <div onclick="go('myinfo')" style="background:#534AB7;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-user" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">내 정보</div>
+      </div>
+      <div onclick="go('inquiry')" style="background:#0F766E;border-radius:10px;padding:14px 6px;text-align:center;cursor:pointer">
+        <i class="ti ti-message-circle" style="font-size:22px;color:#fff;display:block;margin-bottom:5px"></i>
+        <div style="font-size:10px;font-weight:600;color:#fff">문의·건의</div>
       </div>
     </div>
 
@@ -2431,7 +2440,7 @@ function pgMemberCard(){
   </div>
   <div class="pg">
     <div class="nt ntb" style="margin-bottom:12px"><i class="ti ti-info-circle"></i>
-      <p>본 확인증은 충남도청 조합원임을 증명합니다.<br/>신분증 미지참 시 보조 확인용으로 활용하세요.</p>
+      <p>본 확인증은 충남복지통공무원노동조합 조합원임을 증명합니다.<br/>신분증 미지참 시 보조 확인용으로 활용하세요.</p>
     </div>
 
     <!-- 조합원증 카드 -->
@@ -3003,9 +3012,52 @@ function renderSignup(){
 function renderLogin(){
   appEl.innerHTML=`
   <div class="lw">
-    <i class="ti ti-building-community" style="font-size:48px;color:#fff;margin-bottom:8px"></i>
-    <div style="font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">충남 복지통</div>
-    <div style="font-size:13px;color:rgba(255,255,255,.65);margin-bottom:24px">충남도청 조합 후생복지 서비스</div>
+    <!-- 새 로고 SVG -->
+    <svg width="88" height="88" viewBox="0 0 140 140" style="margin-bottom:12px">
+      <rect width="140" height="140" rx="24" fill="#FFD600"/>
+      <rect x="3" y="3" width="134" height="134" rx="22" fill="none" stroke="#CC9900" stroke-width="2.5"/>
+      <circle cx="70" cy="70" r="60" fill="#003D20"/>
+      <circle cx="49" cy="80" r="28" fill="#FF0033"/>
+      <circle cx="91" cy="80" r="28" fill="#0033CC"/>
+      <circle cx="70" cy="51" r="28" fill="#FFD600"/>
+      <circle cx="70" cy="72" r="6" fill="rgba(255,255,255,.15)"/>
+    </svg>
+    <div style="font-size:24px;font-weight:700;color:#fff;text-align:center;margin-bottom:2px">충남 복지통</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.45);text-align:center;margin-bottom:18px">충남복지통공무원노동조합</div>
+
+    <!-- 서비스 미리보기 + 가입 안내 -->
+    <div style="width:100%;max-width:320px;background:rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;margin-bottom:16px;border:.5px solid rgba(255,255,255,.12)">
+      <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:10px;text-align:center">복지통 주요 서비스</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px">
+        <div style="text-align:center">
+          <i class="ti ti-credit-card" style="font-size:20px;color:#FFD600;display:block;margin-bottom:2px"></i>
+          <div style="font-size:8px;color:rgba(255,255,255,.65)">맞춤형</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.65)">복지비</div>
+        </div>
+        <div style="text-align:center">
+          <i class="ti ti-heart" style="font-size:20px;color:#FF6B6B;display:block;margin-bottom:2px"></i>
+          <div style="font-size:8px;color:rgba(255,255,255,.65)">상조회비</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.65)">경조사</div>
+        </div>
+        <div style="text-align:center">
+          <i class="ti ti-building-store" style="font-size:20px;color:#74C0FC;display:block;margin-bottom:2px"></i>
+          <div style="font-size:8px;color:rgba(255,255,255,.65)">제휴업체</div>
+          <div style="font-size:8px;color:rgba(255,255,255,.65)">할인혜택</div>
+        </div>
+        <div style="text-align:center">
+          <i class="ti ti-award" style="font-size:20px;color:#B9F0C8;display:block;margin-bottom:2px"></i>
+          <div style="font-size:8px;color:rgba(255,255,255,.65)">조합원증</div>
+        </div>
+      </div>
+      <!-- 클릭 → 가입 신청 서식 이동 -->
+      <div id="goto-signup-banner" style="background:rgba(255,214,0,.15);border-radius:8px;border:.5px solid rgba(255,214,0,.5);padding:9px 10px;text-align:center;cursor:pointer">
+        <i class="ti ti-user-plus" style="font-size:12px;color:#FFD600;margin-right:4px"></i>
+        <span style="font-size:11px;color:#FFD600;font-weight:700">조합원 가입 후 이용하세요</span>
+        <div style="font-size:9px;color:rgba(255,214,0,.6);margin-top:3px">▶ 터치하면 가입 신청 서식으로 이동</div>
+      </div>
+    </div>
+
+    <!-- 로그인 폼 -->
     <div class="lc">
       <div class="ig">
         <label>전화번호 (또는 관리자 이메일)</label>
@@ -3015,9 +3067,14 @@ function renderLogin(){
         <label>비밀번호</label>
         <input type="password" id="l-pw" placeholder="비밀번호 입력" autocomplete="current-password"/>
       </div>
-      <button class="btn btn-p" id="login-btn" style="margin-bottom:10px"><i class="ti ti-login"></i> 로그인</button>
-      <button class="btn btn-s" id="to-signup-btn"><i class="ti ti-user-plus"></i> 조합원 가입 신청</button>
-      <p style="text-align:center;font-size:12px;color:#6b6b6b;margin-top:10px">계정 문의: 관리자에게 연락하세요</p>
+      <button class="btn btn-p" id="login-btn"><i class="ti ti-login"></i> 로그인</button>
+      <div style="text-align:center;margin-top:14px;padding-top:12px;border-top:.5px solid rgba(255,255,255,.1)">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">문의 사항</div>
+        <a href="tel:041-635-5845" style="font-size:17px;font-weight:700;color:#FFD600;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px">
+          <i class="ti ti-phone" style="font-size:16px;color:#FFD600"></i> 041-635-5845
+        </a>
+        <div style="font-size:9px;color:rgba(255,255,255,.3);margin-top:3px">터치하면 바로 연결됩니다</div>
+      </div>
     </div>
   </div>`;
   const doLogin=async()=>{
@@ -3034,7 +3091,7 @@ function renderLogin(){
   };
   document.getElementById('login-btn')?.addEventListener('click',doLogin);
   document.getElementById('l-pw')?.addEventListener('keydown',e=>e.key==='Enter'&&doLogin());
-  document.getElementById('to-signup-btn')?.addEventListener('click',renderSignup);
+  document.getElementById('goto-signup-banner')?.addEventListener('click',renderSignup);
 }
 
 // ══ 초기화 ══
