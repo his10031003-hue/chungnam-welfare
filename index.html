@@ -2922,31 +2922,7 @@ async function pgANotice(){
   </div>
   ${mkSearchBar('anc-srch','제목·내용 검색...')}
   <div class="pg">
-    <!-- 공지 목록 먼저 표시 -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="font-size:13px;font-weight:600;color:var(--text2)">등록된 공지 (${list.length}건)</div>
-      <button id="nc-del-checked" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #e74c3c;background:#fff;color:#e74c3c;cursor:pointer;display:none"><i class="ti ti-trash"></i> 선택 삭제</button>
-    </div>
-    ${list.length===0?`<div class="em"><i class="ti ti-speakerphone"></i><p>등록된 공지가 없습니다</p></div>`:''}
-    <div class="card" style="overflow:hidden;margin-bottom:14px">
-    ${list.map((n,idx)=>`
-    <div class="anc-row" data-search="${(n.title||'')} ${(n.body||'')}" style="border-bottom:.5px solid var(--border)">
-      <div style="padding:12px 14px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <input type="checkbox" class="nc-chk" data-nid="${n.id}" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:#004A2F"/>
-          <span style="font-size:11px;color:var(--text2);min-width:22px;font-weight:700">${idx+1}</span>
-          ${n.pinned?`<span style="background:#e74c3c;color:#fff;font-size:9px;padding:2px 5px;border-radius:4px;font-weight:700;flex-shrink:0">공지</span>`:''}
-          <div style="flex:1;min-width:0;cursor:pointer" onclick="toggleNoticeBody('nb-admin-${n.id}',this)">
-            <div class="srch-hl" data-raw="${(n.title||'').replace(/"/g,'&quot;')}" style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.title||''}</div>
-            <div style="font-size:10px;color:var(--text2);margin-top:1px">${n.createdAt?.toDate?fmtDt(n.createdAt.toDate()):''} ▼ 터치하면 내용 보기</div>
-          </div>
-        </div>
-        <div id="nb-admin-${n.id}" style="display:none;margin-top:8px;padding:10px 12px;background:#f8f8f6;border-radius:8px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text)">${n.body||''}</div>
-      </div>
-    </div>`).join('')}
-    </div>
-
-    <!-- 새 공지 등록 폼 (하단) -->
+    <!-- 새 공지 작성 폼 (상단, 클릭 시 펼치기) -->
     <div class="card" style="margin-bottom:12px">
       <div class="ch" id="nc-form-toggle" style="cursor:pointer">
         <i class="ti ti-plus" style="color:#004A2F"></i>
@@ -2962,6 +2938,30 @@ async function pgANotice(){
         </div>
         <button class="btn btn-p" id="nc-submit"><i class="ti ti-send"></i> 공지 등록</button>
       </div>
+    </div>
+
+    <!-- 등록된 공지 목록 (하단) -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:600;color:var(--text2)">등록된 공지 (${list.length}건)</div>
+      <button id="nc-del-checked" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #e74c3c;background:#fff;color:#e74c3c;cursor:pointer;display:none"><i class="ti ti-trash"></i> 선택 삭제</button>
+    </div>
+    ${list.length===0?`<div class="em"><i class="ti ti-speakerphone"></i><p>등록된 공지가 없습니다</p></div>`:''}
+    <div class="card" style="overflow:hidden;margin-bottom:10px">
+    ${list.map((n,idx)=>`
+    <div class="anc-row" data-search="${(n.title||'')} ${(n.body||'')}" style="border-bottom:.5px solid var(--border)">
+      <div style="padding:12px 14px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" class="nc-chk" data-nid="${n.id}" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:#004A2F"/>
+          <span style="font-size:11px;color:var(--text2);min-width:22px;font-weight:700">${idx+1}</span>
+          ${n.pinned?`<span style="background:#e74c3c;color:#fff;font-size:9px;padding:2px 5px;border-radius:4px;font-weight:700;flex-shrink:0">공지</span>`:''}
+          <div style="flex:1;min-width:0;cursor:pointer" onclick="toggleNoticeBody('nb-admin-${n.id}',this)">
+            <div class="srch-hl" data-raw="${(n.title||'').replace(/"/g,'&quot;')}" style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.title||''}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:1px">${n.createdAt?.toDate?fmtDt(n.createdAt.toDate()):''} · 터치하면 내용 보기 ▼</div>
+          </div>
+        </div>
+        <div id="nb-admin-${n.id}" style="display:none;margin-top:8px;padding:10px 12px;background:#f8f8f6;border-radius:8px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text)">${n.body||''}</div>
+      </div>
+    </div>`).join('')}
     </div>
 
     <div style="text-align:center;padding:16px 0 8px">
@@ -3071,7 +3071,7 @@ function renderLogin(){
       <circle cx="70" cy="72" r="6" fill="rgba(255,255,255,.15)"/>
     </svg>
     <div style="font-size:24px;font-weight:700;color:#fff;text-align:center;margin-bottom:2px">충남 복지통</div>
-    <div style="font-size:11px;color:rgba(255,255,255,.45);text-align:center;margin-bottom:18px">충남복지통공무원노동조합</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.45);text-align:center;margin-bottom:18px">공무원노동조합</div>
 
     <!-- 서비스 미리보기 + 가입 안내 -->
     <div style="width:100%;max-width:320px;background:rgba(255,255,255,.08);border-radius:12px;padding:12px 14px;margin-bottom:16px;border:.5px solid rgba(255,255,255,.12)">
@@ -3109,11 +3109,11 @@ function renderLogin(){
     <div class="lc">
       <div class="ig">
         <label>전화번호 (또는 관리자 이메일)</label>
-        <input type="text" id="l-phone" placeholder="010-0000-0000" autocomplete="tel"/>
+        <input type="text" id="l-phone" placeholder="010-0000-0000" autocomplete="off" value=""/>
       </div>
       <div class="ig">
         <label>비밀번호</label>
-        <input type="password" id="l-pw" placeholder="비밀번호 입력" autocomplete="current-password"/>
+        <input type="password" id="l-pw" placeholder="비밀번호 입력" autocomplete="new-password" value=""/>
       </div>
       <button class="btn btn-p" id="login-btn"><i class="ti ti-login"></i> 로그인</button>
       <div style="text-align:center;margin-top:14px;padding-top:12px;border-top:.5px solid rgba(255,255,255,.1)">
@@ -3125,6 +3125,15 @@ function renderLogin(){
       </div>
     </div>
   </div>`;
+  // 로그인 화면 입력값 초기화 (자동완성 방지)
+  setTimeout(()=>{
+    const ph=document.getElementById('l-phone');
+    const pw=document.getElementById('l-pw');
+    if(ph&&!ph.dataset.touched) ph.value='';
+    if(pw&&!pw.dataset.touched) pw.value='';
+    ph?.addEventListener('input',()=>ph.dataset.touched='1',{once:true});
+    pw?.addEventListener('input',()=>pw.dataset.touched='1',{once:true});
+  },100);
   const doLogin=async()=>{
     const input=document.getElementById('l-phone').value.trim();
     const pw=document.getElementById('l-pw').value;
