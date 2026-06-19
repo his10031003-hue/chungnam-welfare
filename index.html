@@ -1952,6 +1952,14 @@ function bNotice(){
 
 function bANotice(){
   bindSearch('anc-srch','.anc-row','');
+  // 새 공지 폼 토글
+  document.getElementById('nc-form-toggle')?.addEventListener('click',()=>{
+    const body=document.getElementById('nc-form-body');
+    const chev=document.getElementById('nc-form-chev');
+    const open=body.style.display==='none';
+    body.style.display=open?'block':'none';
+    chev.className='ti '+(open?'ti-chevron-up':'ti-chevron-down');
+  });
   // 내용 펼치기 토글 전역 함수
   window.toggleNoticeBody=function(id, titleEl){
     const body=document.getElementById(id);
@@ -2914,43 +2922,46 @@ async function pgANotice(){
   </div>
   ${mkSearchBar('anc-srch','제목·내용 검색...')}
   <div class="pg">
-    <div class="card" style="margin-bottom:12px">
-      <div class="ch"><i class="ti ti-plus"></i><span>새 공지 작성</span></div>
-      <div style="padding:12px 16px">
-        <div class="ig"><label>제목</label><input type="text" id="nc-title" placeholder="공지 제목을 입력하세요"/></div>
-        <div class="ig"><label>내용</label><textarea id="nc-body" rows="5" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;font-family:inherit;background:var(--bg2)" placeholder="공지 내용을 입력하세요"></textarea></div>
-        <div class="ig" style="flex-direction:row;align-items:center;gap:8px">
-          <input type="checkbox" id="nc-pinned" style="width:16px;height:16px"/>
-          <label for="nc-pinned" style="font-size:13px;margin:0">상단 고정 (중요 공지)</label>
-        </div>
-        <button class="btn btn-p" id="nc-submit"><i class="ti ti-send"></i> 공지 등록</button>
-      </div>
-    </div>
+    <!-- 공지 목록 먼저 표시 -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div style="font-size:13px;font-weight:600;color:var(--text2)">등록된 공지 (${list.length}건)</div>
       <button id="nc-del-checked" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #e74c3c;background:#fff;color:#e74c3c;cursor:pointer;display:none"><i class="ti ti-trash"></i> 선택 삭제</button>
     </div>
     ${list.length===0?`<div class="em"><i class="ti ti-speakerphone"></i><p>등록된 공지가 없습니다</p></div>`:''}
-    <div class="card" style="overflow:hidden;margin-bottom:10px">
+    <div class="card" style="overflow:hidden;margin-bottom:14px">
     ${list.map((n,idx)=>`
     <div class="anc-row" data-search="${(n.title||'')} ${(n.body||'')}" style="border-bottom:.5px solid var(--border)">
-      <div style="padding:11px 14px">
+      <div style="padding:12px 14px">
         <div style="display:flex;align-items:center;gap:8px">
-          <!-- 체크박스 + 번호 -->
           <input type="checkbox" class="nc-chk" data-nid="${n.id}" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:#004A2F"/>
-          <span style="font-size:11px;color:var(--text2);min-width:22px;font-weight:600">${idx+1}</span>
-          <!-- 고정 배지 -->
+          <span style="font-size:11px;color:var(--text2);min-width:22px;font-weight:700">${idx+1}</span>
           ${n.pinned?`<span style="background:#e74c3c;color:#fff;font-size:9px;padding:2px 5px;border-radius:4px;font-weight:700;flex-shrink:0">공지</span>`:''}
-          <!-- 제목 클릭 시 펼치기 -->
           <div style="flex:1;min-width:0;cursor:pointer" onclick="toggleNoticeBody('nb-admin-${n.id}',this)">
             <div class="srch-hl" data-raw="${(n.title||'').replace(/"/g,'&quot;')}" style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.title||''}</div>
-            <div style="font-size:10px;color:var(--text2);margin-top:1px">${n.createdAt?.toDate?fmtDt(n.createdAt.toDate()):''} · 클릭하면 내용 보기 ▼</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:1px">${n.createdAt?.toDate?fmtDt(n.createdAt.toDate()):''} ▼ 터치하면 내용 보기</div>
           </div>
         </div>
-        <!-- 내용 펼치기 (기본 숨김) -->
         <div id="nb-admin-${n.id}" style="display:none;margin-top:8px;padding:10px 12px;background:#f8f8f6;border-radius:8px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text)">${n.body||''}</div>
       </div>
     </div>`).join('')}
+    </div>
+
+    <!-- 새 공지 등록 폼 (하단) -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="ch" id="nc-form-toggle" style="cursor:pointer">
+        <i class="ti ti-plus" style="color:#004A2F"></i>
+        <span>새 공지 작성</span>
+        <i class="ti ti-chevron-down" id="nc-form-chev" style="margin-left:auto;font-size:14px;color:var(--text2)"></i>
+      </div>
+      <div id="nc-form-body" style="display:none;padding:12px 16px">
+        <div class="ig"><label>제목</label><input type="text" id="nc-title" placeholder="공지 제목을 입력하세요"/></div>
+        <div class="ig"><label>내용</label><textarea id="nc-body" rows="5" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;resize:vertical;font-family:inherit;background:var(--bg2)" placeholder="공지 내용을 입력하세요"></textarea></div>
+        <div class="ig" style="flex-direction:row;align-items:center;gap:8px">
+          <input type="checkbox" id="nc-pinned" style="width:16px;height:16px;accent-color:#004A2F"/>
+          <label for="nc-pinned" style="font-size:13px;margin:0">상단 고정 (중요 공지)</label>
+        </div>
+        <button class="btn btn-p" id="nc-submit"><i class="ti ti-send"></i> 공지 등록</button>
+      </div>
     </div>
 
     <div style="text-align:center;padding:16px 0 8px">
