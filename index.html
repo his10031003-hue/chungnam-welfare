@@ -1952,6 +1952,35 @@ function bNotice(){
 
 function bANotice(){
   bindSearch('anc-srch','.anc-row','');
+  // 내용 펼치기 토글 전역 함수
+  window.toggleNoticeBody=function(id, titleEl){
+    const body=document.getElementById(id);
+    if(!body) return;
+    const open=body.style.display==='none';
+    body.style.display=open?'block':'none';
+    const hint=titleEl?.querySelector('div:last-child');
+    if(hint) hint.innerHTML=open?
+      `${hint.innerHTML.replace('▼','▲').replace('클릭하면 내용 보기','접기')}`
+      :`${hint.innerHTML.replace('▲','▼').replace('접기','클릭하면 내용 보기')}`;
+  };
+  // 체크박스 변경 시 선택 삭제 버튼 표시
+  const delCheckedBtn=document.getElementById('nc-del-checked');
+  const updateDelBtn=()=>{
+    const checked=document.querySelectorAll('.nc-chk:checked');
+    if(delCheckedBtn) delCheckedBtn.style.display=checked.length>0?'inline-flex':'none';
+  };
+  document.querySelectorAll('.nc-chk').forEach(chk=>chk.addEventListener('change',updateDelBtn));
+  // 선택 삭제
+  delCheckedBtn?.addEventListener('click',async()=>{
+    const checked=[...document.querySelectorAll('.nc-chk:checked')];
+    if(!checked.length) return;
+    if(!confirm(`선택한 ${checked.length}건의 공지를 삭제하시겠습니까?`)) return;
+    try{
+      await Promise.all(checked.map(chk=>deleteDoc(doc(db,'notices',chk.dataset.nid))));
+      showToast(`${checked.length}건 삭제됐습니다`);
+      setTimeout(()=>go('admin-notice'),600);
+    }catch(e){showToast('오류: '+e.message,'err');}
+  });
   // 공지 등록
   document.getElementById('nc-submit')?.addEventListener('click',async()=>{
     const title=document.getElementById('nc-title').value.trim();
@@ -2897,24 +2926,32 @@ async function pgANotice(){
         <button class="btn btn-p" id="nc-submit"><i class="ti ti-send"></i> 공지 등록</button>
       </div>
     </div>
-    <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:8px">등록된 공지 (${list.length}건)</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:600;color:var(--text2)">등록된 공지 (${list.length}건)</div>
+      <button id="nc-del-checked" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #e74c3c;background:#fff;color:#e74c3c;cursor:pointer;display:none"><i class="ti ti-trash"></i> 선택 삭제</button>
+    </div>
     ${list.length===0?`<div class="em"><i class="ti ti-speakerphone"></i><p>등록된 공지가 없습니다</p></div>`:''}
-    ${list.map(n=>`
-    <div class="card anc-row" data-search="${(n.title||'')} ${(n.body||'')}" style="margin-bottom:8px">
-      <div style="padding:12px 16px">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-              ${n.pinned?`<span style="background:#e74c3c;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700">공지</span>`:''}
-              <span style="font-size:13px;font-weight:600">${n.title}</span>
-            </div>
-            <div style="font-size:11px;color:var(--text2)">${n.createdAt?.toDate?fmtDt(n.createdAt.toDate()):''}</div>
+    <div class="card" style="overflow:hidden;margin-bottom:10px">
+    ${list.map((n,idx)=>`
+    <div class="anc-row" data-search="${(n.title||'')} ${(n.body||'')}" style="border-bottom:.5px solid var(--border)">
+      <div style="padding:11px 14px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <!-- 체크박스 + 번호 -->
+          <input type="checkbox" class="nc-chk" data-nid="${n.id}" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:#004A2F"/>
+          <span style="font-size:11px;color:var(--text2);min-width:22px;font-weight:600">${idx+1}</span>
+          <!-- 고정 배지 -->
+          ${n.pinned?`<span style="background:#e74c3c;color:#fff;font-size:9px;padding:2px 5px;border-radius:4px;font-weight:700;flex-shrink:0">공지</span>`:''}
+          <!-- 제목 클릭 시 펼치기 -->
+          <div style="flex:1;min-width:0;cursor:pointer" onclick="toggleNoticeBody('nb-admin-${n.id}',this)">
+            <div class="srch-hl" data-raw="${(n.title||'').replace(/"/g,'&quot;')}" style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n.title||''}</div>
+            <div style="font-size:10px;color:var(--text2);margin-top:1px">${n.createdAt?.toDate?fmtDt(n.createdAt.toDate()):''} · 클릭하면 내용 보기 ▼</div>
           </div>
-          <button class="btn btn-s nc-del-btn" data-nid="${n.id}" style="padding:4px 10px;font-size:12px;background:#e74c3c;color:#fff;flex-shrink:0"><i class="ti ti-trash"></i> 삭제</button>
         </div>
-        <div style="margin-top:8px;font-size:12px;color:var(--text2);white-space:pre-wrap;max-height:80px;overflow:hidden;line-height:1.5">${(n.body||'').substring(0,200)}${(n.body||'').length>200?'…':''}</div>
+        <!-- 내용 펼치기 (기본 숨김) -->
+        <div id="nb-admin-${n.id}" style="display:none;margin-top:8px;padding:10px 12px;background:#f8f8f6;border-radius:8px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text)">${n.body||''}</div>
       </div>
     </div>`).join('')}
+    </div>
 
     <div style="text-align:center;padding:16px 0 8px">
       <button onclick="go('admin-dash')" style="background:var(--green);border:none;color:#fff;border-radius:20px;padding:9px 28px;cursor:pointer;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,74,47,.25)"><i class="ti ti-layout-dashboard"></i> 대시보드로 돌아가기</button>
