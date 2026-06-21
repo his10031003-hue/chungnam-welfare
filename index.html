@@ -157,12 +157,15 @@ const today=()=>new Date().toISOString().slice(0,10);
 const appEl=document.getElementById('app');
 
 // 복지 충전액 계산 - 조합비 1만원 미만은 0원
-// 복지비 계산: 조합비 1만원은 필수 운영비로 차감, 초과분의 (rate)%를 복지비로 산정, 천원단위 반올림
+// 복지비 계산 (2가지 방식):
+//  - 조합비 100,000원 미만: 1만원을 필수 운영비로 차감 후 초과분의 (rate)%를 복지비로 산정
+//  - 조합비 100,000원 이상: 차감 없이 조합비 전액의 (rate)%를 복지비로 산정
+// 결과는 천원단위 반올림
 const calcCharge=(dues,rate)=>{
   const d=dues||0;
   if(d<10000) return 0;
-  const excess=d-10000;
-  const welfare=excess*(rate??90)/100;
+  const r=(rate??90)/100;
+  const welfare=d>=100000?d*r:(d-10000)*r;
   return Math.round(welfare/1000)*1000;
 };
 // 기부금(조합비) 세액공제 예상액 계산: 연 1천만원 이하 15%, 초과분 30%
@@ -782,7 +785,8 @@ function pgWelfareGuide(){
   </div>
   <div class="pg">
     <div class="nt ntb" style="margin-bottom:12px"><i class="ti ti-info-circle"></i>
-      <p><strong>복지비</strong> = (월 조합비 - 1만원) × 90% (천원단위 반올림)<br/>
+      <p><strong>복지비</strong> (10만원 미만) = (월 조합비 - 1만원) × 90%<br/>
+      <strong>복지비</strong> (10만원 이상) = 월 조합비 × 90% (차감 없음, 천원단위 반올림)<br/>
       <strong>세액공제</strong> = 연 기부금 1,000만원 이하 15%, 초과분 30%</p>
     </div>
     <div class="card" style="overflow-x:auto;margin-bottom:12px">
@@ -1846,7 +1850,7 @@ async function pgADash(){
           <span style="font-size:12px;font-weight:700">${fmtW(paidDues)}</span>
         </div>
         ${totalCharge>0?`<div style="display:flex;justify-content:space-between;margin-top:4px">
-          <span style="font-size:12px;color:var(--text2)">총 충전액 (1만원 초과분 90%)</span>
+          <span style="font-size:12px;color:var(--text2)">총 충전액 (90% 기준)</span>
           <span style="font-size:12px;font-weight:700;color:var(--green)">${fmtW(totalCharge)}</span>
         </div>`:''}
         <div style="display:flex;justify-content:space-between;margin-top:4px">
@@ -1994,7 +1998,7 @@ async function pgAMembers(){
   </div>`;
   return `<div class="hdr">
     <div style="display:flex;align-items:center;justify-content:space-between">
-      <div><h2>조합원 관리</h2><p>활성 ${active.length}명 · 대기 ${pending.length}명${withdraw.length?` · 탈퇴신청 ${withdraw.length}명`:''}</p></div>
+      <div><h2>조합원 관리</h2><p>활성 ${active.length}명 · 대기 ${pending.length}명${withdraw.length?` · 탈퇴 ${withdraw.length}명`:''}</p></div>
       <button class="btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px" id="add-btn"><i class="ti ti-plus"></i> 조합원 추가</button>
     </div>
   </div>
@@ -2044,7 +2048,7 @@ async function pgAMembers(){
         <div class="ig"><label>복지비 수령 계좌</label><input type="text" id="m-wacc" placeholder="농협 351-0000-0000-03"/></div>
       </div>
       <div class="ig"><label>상태</label>
-        <select id="m-status"><option value="active">활성</option><option value="pending">대기중</option><option value="inactive">정지</option></select>
+        <select id="m-status"><option value="active">활성</option><option value="pending">대기중</option><option value="inactive">정지</option><option value="withdraw">탈퇴</option></select>
       </div>
       <div class="ig"><label>역할</label>
         <select id="m-role">
@@ -2422,7 +2426,7 @@ async function pgAApprove(){
     <div class="mb">
       <div class="mh"><h3>가입 승인 · 복지 설정</h3><button class="mc" id="ap-close">&times;</button></div>
       <input type="hidden" id="ap-uid"/>
-      <div class="nt ntb"><i class="ti ti-info-circle"></i><p>조합비와 카테고리별 복지 금액을 설정 후 승인하세요.<br/><strong>조합비 1만원</strong>은 필수 운영비이며, <strong>초과분의 90%</strong>가 복지비로 산정됩니다. (천원단위 반올림)</p></div>
+      <div class="nt ntb"><i class="ti ti-info-circle"></i><p>조합비와 카테고리별 복지 금액을 설정 후 승인하세요.<br/><strong>조합비 10만원 미만</strong>: 1만원을 필수 운영비로 차감 후 <strong>초과분의 90%</strong>가 복지비로 산정됩니다.<br/><strong>조합비 10만원 이상</strong>: 차감 없이 <strong>조합비 전액의 90%</strong>가 복지비로 산정됩니다. (천원단위 반올림)</p></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
         <div class="ig" style="margin:0"><label>월 조합비 (원)</label><input type="number" id="ap-dues" step="1000" placeholder="30000"/></div>
         <div class="ig" style="margin:0"><label>충전율 (%)</label><input type="number" id="ap-rate" value="90"/></div>
@@ -4144,7 +4148,7 @@ function renderSignup(){
           <input type="number" id="s-dues" placeholder="예: 30000" step="1000"/>
         </div>
         <div style="background:#EAF3DE;border-radius:8px;padding:8px 10px;font-size:11px;color:#27500A">
-          <i class="ti ti-info-circle"></i> 복지 충전액 = (조합비 - 1만원) × 90%로 자동 계산됩니다 (천원단위 반올림)
+          <i class="ti ti-info-circle"></i> 복지 충전액 = (조합비-1만원)×90% (10만원 이상은 조합비×90%로 자동 계산됩니다, 천원단위 반올림)
         </div>
       </div>
       <button class="btn btn-p" id="signup-btn" style="margin-bottom:10px"><i class="ti ti-user-plus"></i> 가입 신청하기</button>
