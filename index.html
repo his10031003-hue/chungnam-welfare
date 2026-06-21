@@ -245,34 +245,6 @@ function printDonationReceipt(r){
   win.document.close();
 }
 
-// ══ 국세청 연말정산 간소화 CSV 다운로드 ══
-function downloadHometaxCSV(r){
-  // 국세청 연말정산 간소화 서비스 제출용 CSV 형식
-  const bom='﻿';
-  const header='기부자성명,주민등록번호,기부연도,기부금액,기부단체명,사업자등록번호,기부유형,비고';
-  const row=[
-    r.memberName||'',
-    (r.residentFull||r.residentNum||'').replace(/-/g,''),
-    r.year||'',
-    r.amount||0,
-    '충남복지통공무원노동조합',
-    '0008200000',
-    '노동조합비',
-    '지정기부금'
-  ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',');
-  const csv=bom+header+'\r\n'+row;
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=`기부금영수증_국세청_${r.year}_${r.memberName||''}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('국세청 파일 다운로드 완료! 홈택스 연말정산에 업로드하세요');
-}
-
 
 // ══ 공통 검색 유틸 ══
 function mkSearchBar(id, placeholder){
@@ -578,9 +550,7 @@ async function pgHome(){
     [lim,limPrev,settings]=await Promise.all([getLimit(CU.uid,ym),getLimit(CU.uid,pym),getSettings()]);
   }catch(e){console.warn('pgHome data load',e);}
   settings=settings||{};
-  const dues=CM?.dues||0,rate=CM?.chargeRate??90;
-  const charge=calcCharge(dues,rate);
-  const totalCharge=lim?.totalCharge||lim?.chargeAmount||charge;
+  const totalCharge=lim?.totalCharge||lim?.chargeAmount||0;
   const usedAmts=lim?.usedAmounts||{};
   const totalUsed=Object.values(usedAmts).reduce((s,v)=>s+v,0);
   const sanjoUsed=lim?.sanjoUsed||0;
@@ -1496,7 +1466,7 @@ function pgMyInfo(){
             <div id="don-type-hometax" onclick="donPickType('hometax',this)" style="border:1.5px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .15s">
               <i class="ti ti-download" style="font-size:20px;color:#185FA5;display:block;margin-bottom:4px"></i>
               <div style="font-size:12px;font-weight:600;color:var(--text)">국세청 파일</div>
-              <div style="font-size:10px;color:var(--text2);margin-top:2px">연말정산 간소화<br>CSV 다운로드</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px">조합 입력,<br>홈택스에서 일괄 다운로드</div>
             </div>
           </div>
           <input type="hidden" id="don-type"/>
@@ -1764,7 +1734,7 @@ function bMyInfo(){
       </div>
       ${r.status==='approved'?`<div style="display:flex;gap:6px;width:100%;margin-top:8px;padding-left:44px">
         ${r.donType!=='hometax'?`<button class="btn-sm don-print-btn" data-id="${r.id}" style="background:#534AB7;color:#fff;border-color:#534AB7;font-size:11px;flex:1"><i class="ti ti-printer"></i> 영수증 출력</button>`:''}
-        ${r.donType==='hometax'?`<button class="btn-sm don-hometax-btn" data-id="${r.id}" style="background:#185FA5;color:#fff;border-color:#185FA5;font-size:11px;flex:1"><i class="ti ti-download"></i> 국세청 파일 다운로드</button>`:''}
+        ${r.donType==='hometax'?`<div style="font-size:10.5px;color:#185FA5;background:#EAF3FF;border:.5px solid #b0cef0;border-radius:6px;padding:6px 8px;flex:1"><i class="ti ti-circle-check"></i> 조합에서 국세청에 일괄 신고 처리합니다</div>`:''}
       </div>`:''}
       ${r.status==='pending'?'<div style="font-size:10px;color:var(--text2);margin-top:4px;padding-left:44px">⏳ 관리자 승인 후 출력/다운로드 가능합니다</div>':''}
       ${r.status==='rejected'?'<div style="font-size:10px;color:#A32D2D;margin-top:4px;padding-left:44px">❌ 반려됨 - 관리자에게 문의하세요</div>':''}
@@ -1773,11 +1743,6 @@ function bMyInfo(){
       const all=await getMyDonations(CU.uid);
       const r=all.find(x=>x.id===btn.dataset.id);
       if(r) printDonationReceipt(r);
-    }));
-    document.querySelectorAll('.don-hometax-btn').forEach(btn=>btn.addEventListener('click',async()=>{
-      const all=await getMyDonations(CU.uid);
-      const r=all.find(x=>x.id===btn.dataset.id);
-      if(r) downloadHometaxCSV(r);
     }));
   };
   renderDonList();
@@ -2410,7 +2375,7 @@ async function pgAApprove(){
       <!-- 발급방식 안내 -->
       <div style="font-size:11px;padding:7px 10px;border-radius:6px;margin-bottom:10px;${d.donType==='hometax'?'background:#EAF3FF;color:#185FA5;border:.5px solid #b0cef0':'background:#EDE9FE;color:#534AB7;border:.5px solid #c4b8f5'}">
         ${d.donType==='hometax'
-          ?'<i class="ti ti-info-circle" style="font-size:11px"></i> 승인 후 조합원이 홈택스 파일을 직접 다운로드합니다'
+          ?'<i class="ti ti-info-circle" style="font-size:11px"></i> 승인 후 조합에서 국세청(홈택스)에 일괄 신고 처리합니다'
           :'<i class="ti ti-info-circle" style="font-size:11px"></i> 승인 후 조합원이 영수증 서식을 직접 출력합니다'}
       </div>
       <!-- 승인/반려 버튼 -->
