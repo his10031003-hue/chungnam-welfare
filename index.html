@@ -1330,7 +1330,7 @@ function pgMyInfo(){
         </div>
         <div style="padding:14px 16px">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-            <div style="background:#f8f8f6;border-radius:8px;padding:10px">
+            <div style="background:var(--bg2);border-radius:8px;padding:10px">
               <div style="font-size:10px;color:var(--text2)">연간 납부액</div>
               <div style="font-size:15px;font-weight:700;margin-top:2px">${fmtW(annualDues)}</div>
             </div>
@@ -1435,7 +1435,7 @@ function pgMyInfo(){
           </div>
           <div class="ig" style="margin:0">
             <label>납부 조합비 (원)</label>
-            <input type="number" id="don-amt" placeholder="자동 계산" step="1000" readonly style="background:#f8f8f6;font-weight:700"/>
+            <input type="number" id="don-amt" placeholder="자동 계산" step="1000" readonly style="background:var(--bg2);font-weight:700"/>
           </div>
         </div>
         <div class="nt ntb" style="margin-bottom:10px;font-size:11px"><i class="ti ti-calculator"></i>
@@ -2368,7 +2368,7 @@ async function pgAApprove(){
         </div>
       </div>
       <!-- 상세 정보 테이블 -->
-      <div style="background:#f8f8f6;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px">
+      <div style="background:var(--bg2);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px">
         <div style="display:grid;grid-template-columns:80px 1fr;gap:5px">
           <span style="color:var(--text2)">납부금액</span><span style="font-weight:700;color:#534AB7">${fmtW(d.amount||0)}</span>
           <span style="color:var(--text2)">발급방식</span><span style="font-weight:600">${d.donType==='hometax'?'📥 국세청 파일 다운로드':'🖨 기부금영수증 서식 출력'}</span>
@@ -2988,7 +2988,7 @@ async function pgAInquiry(){
           </div>
           <div style="font-size:13px;font-weight:700;margin-bottom:2px"><span class="srch-hl" data-raw="${(r.title||'').replace(/"/g,'&quot;')}">${r.title||''}</span></div>
           <div style="font-size:12px;color:var(--text2)">보낸이: <span class="srch-hl" data-raw="${(r.memberName||'').replace(/"/g,'&quot;')}">${r.memberName||''}</span> · ${r.phone||''}</div>
-          <div style="font-size:12px;color:var(--text);margin-top:5px;line-height:1.5;background:#f8f8f6;padding:8px 10px;border-radius:6px">${r.content||''}</div>
+          <div style="font-size:12px;color:var(--text);margin-top:5px;line-height:1.5;background:var(--bg2);padding:8px 10px;border-radius:6px">${r.content||''}</div>
           ${r.reply?`<div style="margin-top:6px;padding:8px 10px;background:#EAF3DE;border-radius:6px;font-size:12px;color:#27500A"><i class="ti ti-corner-down-right" style="font-size:11px"></i> <strong>답변:</strong> ${r.reply}</div>`:''}
           ${r.status==='pending'?`<div style="margin-top:8px">
             <textarea id="rp-${r.id}" rows="2" placeholder="답변을 입력하세요 (선택)" style="width:100%;padding:8px 10px;border:.5px solid var(--border);border-radius:6px;font-size:12px;resize:vertical;font-family:inherit;background:var(--card)"></textarea>
@@ -4092,7 +4092,7 @@ async function pgANotice(){
             <div style="font-size:10px;color:var(--text2);margin-top:1px">${n.createdAt?.toDate?fmtDt(n.createdAt.toDate()):''} · 터치하면 내용 보기 ▼</div>
           </div>
         </div>
-        <div id="nb-admin-${n.id}" style="display:none;margin-top:8px;padding:10px 12px;background:#f8f8f6;border-radius:8px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text)">${n.body||''}</div>
+        <div id="nb-admin-${n.id}" style="display:none;margin-top:8px;padding:10px 12px;background:var(--bg2);border-radius:8px;font-size:12px;line-height:1.7;white-space:pre-wrap;color:var(--text)">${n.body||''}</div>
           <div id="nb-edit-${n.id}" style="display:none;margin-top:8px">
             <input type="text" id="ne-title-${n.id}" value="${(n.title||'').replace(/"/g,'')}" style="width:100%;padding:8px 10px;border:.5px solid var(--border);border-radius:6px;font-size:13px;margin-bottom:6px;font-family:inherit;background:var(--card)"/>
             <textarea id="ne-body-${n.id}" rows="4" style="width:100%;padding:8px 10px;border:.5px solid var(--border);border-radius:6px;font-size:12px;resize:vertical;font-family:inherit;background:var(--card)">${n.body||''}</textarea>
